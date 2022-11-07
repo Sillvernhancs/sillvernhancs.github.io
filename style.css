@@ -6,10 +6,11 @@ body {
     overflow-x: hidden;
 }
 
-#first{
+.page{
     position: relative;
     text-align: center;
     color: white;
+    scroll-snap-align: start;
 }
 
 .img {
@@ -28,9 +29,9 @@ body {
 }
 
 #title2 {
-    padding-top: 30px;
+    top: -7px;
     left: 50px;
-    font-size: 1.5vw;
+    font-size: 1vw;
     text-align: left;
     position: relative;
     color: white;
@@ -66,6 +67,8 @@ body {
     background-color: rgb(255, 255, 255);
     max-width: 100%;
     overflow-x: hidden;
+
+    scroll-snap-type: y mandatory;
 }
 
 #chunk {
