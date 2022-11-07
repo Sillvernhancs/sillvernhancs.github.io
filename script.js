@@ -3,9 +3,9 @@ var is_mobile = !!navigator.userAgent.match(/iphone|android|blackberry/ig) || fa
 $(document).ready(function() {
     GL = document.getElementById("glcanvas");
     if (is_mobile) {
-        GL.setAttribute("width", "100%");
-        GL.setAttribute("height", "100%");
-    }
+        GL.setAttribute("class", glcanvas_moblie);
+        console.log("on moblie")
+    } else {console.log("on pc ")}
     picture_width = GL.offsetWidth;
     picture_height = GL.offsetHeight;
     document.getElementById("VARJO").setAttribute("width", picture_width);
@@ -30,7 +30,7 @@ window.addEventListener('resize', function(event) {
 
     document.getElementById("source_img").setAttribute("width", picture_width);
     document.getElementById("source_img").setAttribute("heigh", picture_height);
-    
+
     document.getElementById("block").setAttribute("width", picture_width);
 
 
