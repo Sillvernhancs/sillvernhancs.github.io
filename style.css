@@ -2,6 +2,8 @@ body {
     background-image: url(body_background.jpeg); 
     background-size: 100%;
     background-repeat: repeat;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 #first{
@@ -26,7 +28,7 @@ body {
 }
 
 #title2 {
-    padding-top: 70px;
+    padding-top: 30px;
     left: 50px;
     font-size: 1.5vw;
     text-align: left;
@@ -62,6 +64,8 @@ body {
     width: 80%;
     overflow: auto;
     background-color: rgb(255, 255, 255);
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 #chunk {
