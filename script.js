@@ -3,7 +3,7 @@ var is_mobile = !!navigator.userAgent.match(/iphone|android|blackberry/ig) || fa
 $(document).ready(function() {
     GL = document.getElementById("glcanvas");
     if (is_mobile) {
-        GL.setAttribute("class", glcanvas_moblie);
+        GL.setAttribute("class", "glcanvas_moblie");
         console.log("on moblie")
     } else {console.log("on pc ")}
     picture_width = GL.offsetWidth;

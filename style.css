@@ -23,7 +23,7 @@ body {
 
 #title {
     top: 20px; 
-    left: 50px;
+    left: 30px;
     font-size: 1.8vw;
     text-align: left;
     position: absolute;
@@ -31,8 +31,18 @@ body {
 
 #title2 {
     top: -7px;
-    left: 50px;
-    font-size: 1vw;
+    left: 30px;
+    font-size: 1.5vw;
+    text-align: left;
+    position: relative;
+    color: white;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.title {
+    left: 30px;
+    font-size: 1.5vw;
     text-align: left;
     position: relative;
     color: white;
@@ -54,24 +64,7 @@ body {
     background-color: rgb(0, 0, 0);
 }
 
-.glcanvas {
-    position: absolute;
-    margin: auto;
-    left: 0px;
-    right: 0px;
-    top: 0px;
-    bottom: 0px;
-    text-align: center;
-    height: 90%;
-    width: 80%;
-    overflow: auto;
-    background-color: rgb(255, 255, 255);
-    max-width: 100%;
-    overflow-x: hidden;
-    scroll-snap-type: y mandatory;
-}
-
-.glcanvas_moblie {
+.glcanvas{
     position: absolute;
     margin: auto;
     left: 0px;
