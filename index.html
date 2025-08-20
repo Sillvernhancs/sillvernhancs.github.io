@@ -1,28 +1,1153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Website</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hexapod Pack Opener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(124, 252, 0, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            will-change: transform;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(100vh) translateX(0) translateZ(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100vh) translateX(100px) translateZ(0);
+                opacity: 0;
+            }
+        }
+
+        /* White flash overlay for pack opening */
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(124, 252, 0, 0.3) 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            will-change: opacity, transform;
+        }
+
+        .flash-overlay.active {
+            animation: flashBurst 2s ease-out forwards;
+        }
+
+        @keyframes flashBurst {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            perspective: 1000px;
+        }
+
+        .title {
+            color: #7cfc00;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(124, 252, 0, 0.5),
+                         0 0 40px rgba(124, 252, 0, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+            transition: all 0.3s ease;
+            min-height: 35px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .title.card-name {
+            animation: none;
+            color: #fff;
+        }
+
+        .title.card-name.common {
+            text-shadow: 0 0 20px rgba(150, 150, 150, 0.8);
+        }
+
+        .title.card-name.uncommon {
+            color: #0096ff;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.8);
+        }
+
+        .title.card-name.legendary {
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                         0 0 60px rgba(255, 215, 0, 0.5);
+            animation: legendaryPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes legendaryPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .pack-container {
+            position: relative;
+            width: 200px;
+            height: 280px;
+            margin: 0 auto 30px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+
+        .pack-container:hover {
+            transform: rotateY(10deg) rotateX(-10deg) translateZ(20px);
+        }
+
+        .pack {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .pack:hover {
+            filter: brightness(1.2) drop-shadow(0 0 30px rgba(124, 252, 0, 0.5));
+        }
+
+        .pack-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Epic pack opening animation - optimized */
+        .pack.opening {
+            animation: packOpenEpic 2s ease-out forwards;
+            will-change: transform, opacity, filter;
+        }
+
+        @keyframes packOpenEpic {
+            0% {
+                transform: scale(1) rotate(0deg) translateZ(0);
+            }
+            30% {
+                transform: scale(1.5) rotate(5deg) translateZ(50px);
+                filter: brightness(1.5);
+            }
+            50% {
+                transform: scale(2) rotate(-5deg) translateZ(100px);
+                filter: brightness(2) drop-shadow(0 0 50px rgba(124, 252, 0, 0.8));
+            }
+            70% {
+                transform: scale(3) rotate(180deg) translateZ(150px);
+                filter: brightness(3) drop-shadow(0 0 100px rgba(255, 255, 255, 1));
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(5) rotate(720deg) translateZ(200px);
+                filter: brightness(5);
+                opacity: 0;
+            }
+        }
+
+        /* Energy rings during pack opening */
+        .energy-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border: 3px solid rgba(124, 252, 0, 0.8);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        .energy-ring.active {
+            animation: energyExpand 1.5s ease-out forwards;
+        }
+
+        @keyframes energyExpand {
+            0% {
+                width: 100px;
+                height: 100px;
+                opacity: 1;
+                border-width: 3px;
+            }
+            100% {
+                width: 500px;
+                height: 500px;
+                opacity: 0;
+                border-width: 1px;
+            }
+        }
+
+        .card-display {
+            display: none;
+            position: relative;
+            width: 250px;
+            height: 350px;
+            margin: 0 auto;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+            will-change: transform;
+        }
+
+        .card:hover {
+            transform: rotateY(5deg) rotateX(-5deg) translateZ(10px);
+        }
+
+        .card.flipped:hover {
+            transform: rotateY(185deg) rotateX(-5deg) translateZ(10px);
+        }
+
+        .card-back {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #2d5016 0%, #0f1f05 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #7cfc00;
+            font-weight: bold;
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .card-front {
+            width: 100%;
+            height: 100%;
+            transform: rotateY(180deg);
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 15px;
+            overflow: hidden;
+            backface-visibility: hidden;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .rarity-glow {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 25px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card.common .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(150, 150, 150, 0.8), transparent);
+            animation: commonGlow 2s ease-in-out infinite;
+        }
+
+        .card.uncommon .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(0, 150, 255, 0.8), transparent);
+            animation: uncommonGlow 2s ease-in-out infinite;
+        }
+
+        .card.legendary .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(255, 215, 0, 1), rgba(255, 150, 0, 0.5), transparent);
+            animation: legendaryGlow 1s ease-in-out infinite;
+        }
+
+        .card.flipped .rarity-glow {
+            opacity: 1;
+        }
+
+        @keyframes commonGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(150, 150, 150, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(150, 150, 150, 0.8); }
+        }
+
+        @keyframes uncommonGlow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 150, 255, 0.6); }
+            50% { box-shadow: 0 0 50px rgba(0, 150, 255, 0.9); }
+        }
+
+        @keyframes legendaryGlow {
+            0%, 100% { 
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.8),
+                           0 0 80px rgba(255, 215, 0, 0.6),
+                           0 0 120px rgba(255, 215, 0, 0.4);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 60px rgba(255, 215, 0, 1),
+                           0 0 100px rgba(255, 215, 0, 0.8),
+                           0 0 140px rgba(255, 215, 0, 0.6);
+                transform: scale(1.02);
+            }
+        }
+
+        /* Card slam animation - optimized */
+        .card-slam {
+            animation: cardSlam 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes cardSlam {
+            0% {
+                transform: translateY(-150vh) scale(0.3) rotateZ(720deg) translateZ(0);
+                opacity: 0;
+            }
+            60% {
+                transform: translateY(20px) scale(1.1) rotateZ(5deg) translateZ(0);
+                opacity: 1;
+            }
+            80% {
+                transform: translateY(-5px) scale(0.95) rotateZ(-2deg) translateZ(0);
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+            }
+        }
+
+        /* Legendary card special entrance - optimized */
+        .card.legendary.card-slam {
+            animation: legendarySlam 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+
+        @keyframes legendarySlam {
+            0% {
+                transform: translateY(-200vh) scale(0.1) rotateZ(1440deg) translateZ(0);
+                opacity: 0;
+                filter: brightness(3) hue-rotate(0deg);
+            }
+            40% {
+                transform: translateY(-50px) scale(1.5) rotateZ(360deg) translateZ(0);
+                opacity: 1;
+                filter: brightness(2) hue-rotate(180deg);
+            }
+            60% {
+                transform: translateY(30px) scale(1.2) rotateZ(10deg) translateZ(0);
+                filter: brightness(1.5) hue-rotate(360deg);
+            }
+            80% {
+                transform: translateY(-10px) scale(0.9) rotateZ(-5deg) translateZ(0);
+                filter: brightness(1.2) hue-rotate(0deg);
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+                filter: brightness(1) hue-rotate(0deg);
+            }
+        }
+
+        /* Lightning effect for legendary cards */
+        .lightning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        .lightning.active {
+            display: block;
+        }
+
+        .lightning-bolt {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, #fff, transparent);
+            opacity: 0;
+            animation: lightning 0.3s ease-out forwards;
+            will-change: opacity, transform;
+        }
+
+        @keyframes lightning {
+            0% {
+                opacity: 0;
+                transform: scaleY(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scaleY(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(1);
+            }
+        }
+
+        /* Screen shake for legendary */
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5px, 5px); }
+            20% { transform: translate(5px, -5px); }
+            30% { transform: translate(-3px, 3px); }
+            40% { transform: translate(3px, -3px); }
+            50% { transform: translate(-2px, 2px); }
+            60% { transform: translate(2px, -2px); }
+            70% { transform: translate(-4px, 4px); }
+            80% { transform: translate(4px, -4px); }
+            90% { transform: translate(-1px, 1px); }
+        }
+
+        .screen-shake {
+            animation: screenShake 0.5s ease-out;
+        }
+
+        .click-hint {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(124, 252, 0, 0.6);
+            font-size: 14px;
+            animation: fadeInOut 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .all-cards-display {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .small-card {
+            width: 120px;
+            height: 168px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            position: relative;
+            opacity: 0;
+            animation: cardFadeIn 0.5s ease-out forwards;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8) translateZ(0);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) translateZ(0);
+            }
+        }
+
+        .small-card:hover {
+            transform: scale(1.15) translateY(-10px) rotateZ(2deg) translateZ(20px);
+            z-index: 100;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .small-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .small-card.legendary {
+            animation: cardFadeIn 0.5s ease-out forwards, legendaryFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes legendaryFloat {
+            0%, 100% { transform: translateY(0) translateZ(0); }
+            50% { transform: translateY(-5px) translateZ(0); }
+        }
+
+        .burst-particles {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .burst-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: burst 1s ease-out forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes burst {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .locked-message {
+            color: #ff4444;
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 2px solid #ff4444;
+            border-radius: 10px;
+        }
+
+        /* Legendary announcement */
+        .legendary-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                         0 0 60px rgba(255, 215, 0, 0.6),
+                         0 0 90px rgba(255, 215, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1001;
+            will-change: transform, opacity;
+        }
+
+        .legendary-announcement.show {
+            animation: legendaryAnnounce 2s ease-out forwards;
+        }
+
+        @keyframes legendaryAnnounce {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+                letter-spacing: 20px;
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+                letter-spacing: 5px;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+                letter-spacing: 2px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- ===== CUSTOMIZABLE ASSETS SECTION ===== -->
+    <script>
+        // REPLACE THESE WITH YOUR OWN ASSETS
+        const PACK_IMAGE = 'HexapodTCGPack.png';
+        
+        // Card collection with rarity and image URLs
+        const CARD_COLLECTION = {
+            common: [
+                { name: 'The Soldier Ant', image: 'bugs_card/ant.png' },
+                { name: 'The House Spider', image: 'bugs_card/spider.png'},
+                { name: 'The Bumble Bee', image: 'bugs_card/bee.png'},
+                { name: 'The Pill Bug', image: 'bugs_card/pill.png'},
+                { name: 'The Grass Hopper', image: 'bugs_card/cricket.png'},
+            ],
+            uncommon: [
+                { name: 'The Tiger Beetle', image: 'bugs_card/tiger.png' },
+                { name: 'The Black Beetle', image: 'bugs_card/blackbeetle.png' },
+                { name: 'The Diving Bell Spider', image: 'bugs_card/divingbell.png' },
+                { name: 'The Dung Beetle', image: 'bugs_card/dungbeetle.png' },
+                { name: 'The Mole Cricket', image: 'bugs_card/mole.png' },
+                { name: 'The Wasp', image: 'bugs_card/wasp.png' },
+            ],
+            legendary: [
+                { name: 'The Praying Mantis', image: 'bugs_card/mantis.png' },
+                { name: 'The Dragon Fly', image: 'bugs_card/dragon.png' },
+                { name: 'The Rhino Beetle', image: 'bugs_card/rihno.png' },
+            ]
+        };
 
-  <header>
-    <h1>Welcome to My Website</h1>
-    <p class="tagline">A simple, modern homepage with a link to view a markdown file.</p>
-  </header>
+        // Rarity chances (must add up to 100)
+        const RARITY_CHANCES = {
+            common: 70,      // 70% chance
+            uncommon: 22,    // 22% chance
+            legendary: 8     // 8% chance
+        };
+    </script>
+    <!-- ===== END CUSTOMIZABLE SECTION ===== -->
 
-  <main>
-    <section class="content">
-      <p>Click below to view the Markdown file:</p>
-      <a href="django.md" target="_blank" class="link-button">View Markdown File</a>
-    </section>
-  </main>
+    <div class="particles" id="particles"></div>
+    <div class="flash-overlay" id="flashOverlay"></div>
+    <div class="lightning" id="lightning"></div>
+    <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
+    
+    <div class="container" id="mainContainer">
+        <h1 class="title" id="title">Open Your Daily Pack!</h1>
+        
+        <div class="pack-container" id="packContainer">
+            <div class="pack" id="pack">
+                <img src="" id="packImage" class="pack-image" alt="Card Pack">
+            </div>
+            <div class="energy-ring" id="energyRing1"></div>
+            <div class="energy-ring" id="energyRing2"></div>
+            <div class="energy-ring" id="energyRing3"></div>
+        </div>
+        
+        <div class="card-display" id="cardDisplay">
+            <div class="card" id="currentCard">
+                <div class="rarity-glow"></div>
+                <img src="" id="cardImage" class="card-image" alt="Card">
+            </div>
+            <div class="click-hint">Click card to continue</div>
+        </div>
+        
+        <div class="all-cards-display" id="allCardsDisplay"></div>
+        
+        <div class="locked-message" id="lockedMessage" style="display: none;">
+            You've already opened your daily pack! Come back tomorrow for more cards.
+        </div>
+    </div>
 
-  <footer>
-    <p>&copy; 2025 My Website | Designed with ❤️</p>
-  </footer>
-
+    <script>
+        // Initialize
+        document.getElementById('packImage').src = PACK_IMAGE;
+        
+        // Storage key for daily lock
+        const STORAGE_KEY = 'hexapod_last_opened';
+        let currentCardIndex = 0;
+        let pulledCards = [];
+        let canClickCard = false;
+        
+        // Create background particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) { // Reduced from 30 for performance
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Check if pack can be opened today
+        function canOpenPack() {
+            const lastOpened = localStorage.getItem(STORAGE_KEY);
+            if (!lastOpened) return true;
+            
+            const lastDate = new Date(lastOpened);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            lastDate.setHours(0, 0, 0, 0);
+            
+            return today > lastDate;
+        }
+        
+        // Get random card based on rarity
+        function getRandomCard() {
+            const rand = Math.random() * 100;
+            let rarity;
+            
+            if (rand < RARITY_CHANCES.legendary) {
+                rarity = 'legendary';
+            } else if (rand < RARITY_CHANCES.legendary + RARITY_CHANCES.uncommon) {
+                rarity = 'uncommon';
+            } else {
+                rarity = 'common';
+            }
+            
+            const cards = CARD_COLLECTION[rarity];
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            
+            return { ...card, rarity };
+        }
+        
+        // Generate 5 random cards
+        function generatePack() {
+            pulledCards = [];
+            for (let i = 0; i < 5; i++) {
+                pulledCards.push(getRandomCard());
+            }
+        }
+        
+        // Create burst effect
+        function createBurst(x, y, color, intensity = 20) {
+            const burst = document.createElement('div');
+            burst.className = 'burst-particles';
+            burst.style.left = x + 'px';
+            burst.style.top = y + 'px';
+            document.body.appendChild(burst);
+            
+            for (let i = 0; i < Math.min(intensity, 30); i++) { // Cap particles for performance
+                const particle = document.createElement('div');
+                particle.className = 'burst-particle';
+                particle.style.background = color;
+                particle.style.setProperty('--tx', (Math.random() - 0.5) * 300 + 'px');
+                particle.style.setProperty('--ty', (Math.random() - 0.5) * 300 + 'px');
+                burst.appendChild(particle);
+            }
+            
+            setTimeout(() => burst.remove(), 1000);
+        }
+        
+        // Create lightning effect for legendary
+        function createLightning() {
+            const lightning = document.getElementById('lightning');
+            lightning.innerHTML = '';
+            lightning.classList.add('active');
+            
+            for (let i = 0; i < 5; i++) {
+                const bolt = document.createElement('div');
+                bolt.className = 'lightning-bolt';
+                bolt.style.left = Math.random() * 100 + '%';
+                bolt.style.animationDelay = i * 0.1 + 's';
+                lightning.appendChild(bolt);
+            }
+            
+            setTimeout(() => {
+                lightning.classList.remove('active');
+            }, 1000);
+        }
+        
+        // Update title with card name
+        function updateTitle(card) {
+            const title = document.getElementById('title');
+            title.textContent = card.name;
+            title.className = 'title card-name ' + card.rarity;
+        }
+        
+        // Show card with animation
+        function showCard(index) {
+            const card = pulledCards[index];
+            const cardElement = document.getElementById('currentCard');
+            const cardImage = document.getElementById('cardImage');
+            
+            // Force animation reset by removing and re-adding the element
+            const newCard = cardElement.cloneNode(true);
+            cardElement.parentNode.replaceChild(newCard, cardElement);
+            
+            // Get the new reference
+            const currentCard = document.getElementById('currentCard');
+            const currentImage = document.getElementById('cardImage');
+            
+            // Reset card with proper animation
+            currentCard.className = 'card ' + card.rarity;
+            currentCard.classList.add('card-slam');
+            currentCard.classList.remove('flipped');
+            canClickCard = false;
+            
+            // Update title
+            updateTitle(card);
+            
+            // Set card image
+            currentImage.src = card.image;
+            
+            // Special effects for legendary
+            if (card.rarity === 'legendary') {
+                // Show legendary announcement
+                const announcement = document.getElementById('legendaryAnnouncement');
+                announcement.classList.add('show');
+                setTimeout(() => announcement.classList.remove('show'), 2000);
+                
+                // Screen shake
+                document.getElementById('mainContainer').classList.add('screen-shake');
+                setTimeout(() => {
+                    document.getElementById('mainContainer').classList.remove('screen-shake');
+                }, 500);
+                
+                // Lightning effect
+                createLightning();
+                
+                // Extra burst particles
+                setTimeout(() => {
+                    const rect = currentCard.getBoundingClientRect();
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            createBurst(
+                                rect.left + rect.width / 2 + (Math.random() - 0.5) * 100,
+                                rect.top + rect.height / 2 + (Math.random() - 0.5) * 100,
+                                '#ffd700',
+                                25
+                            );
+                        }, i * 200);
+                    }
+                }, 400);
+            }
+            
+            // Auto flip after animation
+            setTimeout(() => {
+                currentCard.classList.add('flipped');
+                canClickCard = true;
+                
+                // Create burst effect based on rarity
+                const rect = currentCard.getBoundingClientRect();
+                const colors = {
+                    common: '#999',
+                    uncommon: '#0096ff',
+                    legendary: '#ffd700'
+                };
+                const intensity = card.rarity === 'legendary' ? 30 : 15;
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, colors[card.rarity], intensity);
+            }, card.rarity === 'legendary' ? 1200 : 600);
+            
+            // Re-attach click handler to the new element
+            currentCard.addEventListener('click', function() {
+                if (!canClickCard) return;
+                
+                currentCardIndex++;
+                
+                if (currentCardIndex < 5) {
+                    showCard(currentCardIndex);
+                } else {
+                    displayAllCards();
+                }
+            });
+        }
+        
+        // Display all cards
+        function displayAllCards() {
+            const container = document.getElementById('allCardsDisplay');
+            container.innerHTML = '';
+            
+            // Reset title
+            document.getElementById('title').textContent = 'Your Collection!';
+            document.getElementById('title').className = 'title';
+            
+            pulledCards.forEach((card, i) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'small-card ' + card.rarity;
+                cardDiv.style.animationDelay = i * 0.1 + 's';
+                
+                const img = document.createElement('img');
+                img.src = card.image;
+                img.alt = card.name;
+                
+                const glow = document.createElement('div');
+                glow.className = 'rarity-glow';
+                glow.style.opacity = '1';
+                
+                cardDiv.appendChild(glow);
+                cardDiv.appendChild(img);
+                container.appendChild(cardDiv);
+                
+                // Hover effect with burst
+                cardDiv.addEventListener('mouseenter', function(e) {
+                    if (card.rarity === 'legendary') {
+                        const rect = e.target.getBoundingClientRect();
+                        createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
+                    }
+                });
+            });
+            
+            document.getElementById('cardDisplay').style.display = 'none';
+            container.style.display = 'flex';
+        }
+        
+        // Card click handler
+        document.getElementById('currentCard').addEventListener('click', function() {
+            if (!canClickCard) return;
+            
+            currentCardIndex++;
+            
+            if (currentCardIndex < 5) {
+                showCard(currentCardIndex);
+            } else {
+                displayAllCards();
+            }
+        });
+        
+        // Pack click handler
+        document.getElementById('packContainer').addEventListener('click', function() {
+            if (!canOpenPack()) {
+                document.getElementById('lockedMessage').style.display = 'block';
+                return;
+            }
+            
+            // Save opened date
+            localStorage.setItem(STORAGE_KEY, new Date().toISOString());
+            
+            // Generate pack
+            generatePack();
+            currentCardIndex = 0;
+            
+            // Start epic opening sequence
+            const pack = document.getElementById('pack');
+            pack.classList.add('opening');
+            
+            // Trigger energy rings
+            setTimeout(() => {
+                document.getElementById('energyRing1').classList.add('active');
+            }, 200);
+            setTimeout(() => {
+                document.getElementById('energyRing2').classList.add('active');
+            }, 400);
+            setTimeout(() => {
+                document.getElementById('energyRing3').classList.add('active');
+            }, 600);
+            
+            // Create multiple burst effects
+            const rect = pack.getBoundingClientRect();
+            setTimeout(() => {
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#7cfc00', 25);
+            }, 500);
+            setTimeout(() => {
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 30);
+            }, 800);
+            
+            // Trigger white flash
+            setTimeout(() => {
+                document.getElementById('flashOverlay').classList.add('active');
+            }, 900);
+            
+            // Show first card after animation sequence
+            setTimeout(() => {
+                document.getElementById('packContainer').style.display = 'none';
+                document.getElementById('cardDisplay').style.display = 'block';
+                document.getElementById('flashOverlay').classList.remove('active');
+                showCard(0);
+            }, 2000);
+        });
+        
+        // Initialize particles on load
+        createParticles();
+        
+        // DEBUG MODE - Add URL parameter support
+        const urlParams = new URLSearchParams(window.location.search);
+        const debugMode = urlParams.get('debug') === 'true';
+        
+        // Debug controls
+        if (debugMode) {
+            console.log('🐛 DEBUG MODE ENABLED');
+            
+            // Add debug panel
+            const debugPanel = document.createElement('div');
+            debugPanel.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: #7cfc00;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 12px;
+                z-index: 10000;
+                border: 1px solid #7cfc00;
+            `;
+            debugPanel.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
+                <button id="resetDaily" style="
+                    background: #7cfc00;
+                    color: #000;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Reset Daily Lock</button>
+                <button id="forceLegendary" style="
+                    background: #ffd700;
+                    color: #000;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Force Legendary</button>
+                <button id="instantOpen" style="
+                    background: #ff6b6b;
+                    color: #fff;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Skip Animations</button>
+                <div style="margin-top: 10px; font-size: 10px;">
+                    Press 'R' to reset<br>
+                    Press 'L' for legendary<br>
+                    Press 'Space' to open
+                </div>
+            `;
+            document.body.appendChild(debugPanel);
+            
+            // Reset button
+            document.getElementById('resetDaily').addEventListener('click', function() {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            });
+            
+            // Force legendary button
+            let forceLegendaryMode = false;
+            document.getElementById('forceLegendary').addEventListener('click', function() {
+                forceLegendaryMode = !forceLegendaryMode;
+                this.style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                this.textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                console.log('Force Legendary:', forceLegendaryMode);
+            });
+            
+            // Instant open button
+            let skipAnimations = false;
+            document.getElementById('instantOpen').addEventListener('click', function() {
+                skipAnimations = !skipAnimations;
+                this.style.background = skipAnimations ? '#00ff00' : '#ff6b6b';
+                this.textContent = skipAnimations ? 'Instant ON' : 'Skip Animations';
+                console.log('Skip Animations:', skipAnimations);
+            });
+            
+            // Override canOpenPack in debug mode
+            window.canOpenPack = function() {
+                return true; // Always allow opening in debug mode
+            };
+            
+            // Override getRandomCard for forced legendary
+            const originalGetRandomCard = getRandomCard;
+            window.getRandomCard = function() {
+                if (forceLegendaryMode) {
+                    const cards = CARD_COLLECTION.legendary;
+                    const card = cards[Math.floor(Math.random() * cards.length)];
+                    return { ...card, rarity: 'legendary' };
+                }
+                return originalGetRandomCard();
+            };
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
+                }
+                if (e.key === 'l' || e.key === 'L') {
+                    forceLegendaryMode = !forceLegendaryMode;
+                    document.getElementById('forceLegendary').style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                    document.getElementById('forceLegendary').textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                }
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('packContainer').click();
+                }
+            });
+            
+            // Speed up animations if instant mode
+            if (skipAnimations) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        animation-duration: 0.1s !important;
+                        transition-duration: 0.1s !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // Check if pack is locked on load (skip in debug mode)
+        if (!debugMode && !canOpenPack()) {
+            document.getElementById('packContainer').style.opacity = '0.5';
+            document.getElementById('packContainer').style.pointerEvents = 'none';
+            document.getElementById('lockedMessage').style.display = 'block';
+            document.getElementById('title').textContent = 'Daily Pack Already Opened!';
+        }
+    </script>
 </body>
 </html>
