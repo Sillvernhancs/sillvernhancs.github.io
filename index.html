@@ -22,6 +22,63 @@
             position: relative;
         }
 
+        /* Audio Controls */
+        .audio-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .audio-button {
+            background: rgba(124, 252, 0, 0.2);
+            border: 2px solid #7cfc00;
+            color: #7cfc00;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-button:hover {
+            background: rgba(124, 252, 0, 0.4);
+            box-shadow: 0 0 15px rgba(124, 252, 0, 0.5);
+        }
+
+        .audio-button.active {
+            background: #7cfc00;
+            color: #000;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .volume-slider {
+            width: 60px;
+            height: 4px;
+            background: rgba(124, 252, 0, 0.3);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #7cfc00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
         /* Animated background particles */
         .particles {
             position: fixed;
@@ -99,12 +156,13 @@
 
         .container {
             width: 100%;
-            max-width: 400px;
-            padding: 20px;
+            max-width: 600px;
+            padding: 30px;
             text-align: center;
             position: relative;
             z-index: 10;
             perspective: 1000px;
+            transform: scale(1.2);
         }
 
         .title {
@@ -173,7 +231,7 @@
         }
 
         .pack:hover {
-            filter: brightness(1.2) drop-shadow(0 0 30px rgba(124, 252, 0, 0.5));
+            filter: brightness(1.2) drop-shadow(0 0 30px rgba(252, 214, 0, 0.5));
         }
 
         .pack-image {
@@ -221,7 +279,7 @@
             transform: translate(-50%, -50%);
             width: 100px;
             height: 100px;
-            border: 3px solid rgba(124, 252, 0, 0.8);
+            border: 3px solid rgba(252, 193, 0, 0.8);
             border-radius: 50%;
             opacity: 0;
             pointer-events: none;
@@ -271,11 +329,15 @@
         }
 
         .card:hover {
-            transform: rotateY(5deg) rotateX(-5deg) translateZ(10px);
+            transform: rotateY(10deg) rotateX(-10deg) scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
+                        0 0 80px rgba(255, 255, 255, 0.6);
         }
 
         .card.flipped:hover {
-            transform: rotateY(185deg) rotateX(-5deg) translateZ(10px);
+            transform: rotateY(190deg) rotateX(-10deg) scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
+                        0 0 80px rgba(255, 255, 255, 0.6);
         }
 
         .card-back {
@@ -635,6 +697,16 @@
     </style>
 </head>
 <body>
+    <!-- Audio Controls -->
+    <div class="audio-controls">
+        <button class="audio-button active" id="musicToggle">🎵 Music</button>
+        <button class="audio-button active" id="sfxToggle">🔊 SFX</button>
+        <div class="volume-control">
+            <span style="color: #7cfc00; font-size: 12px;">🔊</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+        </div>
+    </div>
+
     <!-- ===== CUSTOMIZABLE ASSETS SECTION ===== -->
     <script>
         // REPLACE THESE WITH YOUR OWN ASSETS
@@ -668,7 +740,19 @@
         const RARITY_CHANCES = {
             common: 70,      // 70% chance
             uncommon: 22,    // 22% chance
-            legendary: 8     // 8% chance
+            legendary: 8     // 8% chanc
+        };
+
+        // Audio settings
+        const AUDIO_SETTINGS = {
+            // Replace these URLs with your own audio files
+            backgroundMusic: 'balotromaintheme.wav',
+            packOpen: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav', // Placeholder
+            cardSlam: 'cardsound.mp3', // Placeholder
+            commonReveal: '', // Placeholder
+            uncommonReveal: '', // Placeholder
+            legendaryReveal: 'wing.ogg', // Placeholder
+            allCardsReveal: 'https://www.soundjay.com/misc/sounds/magic-chime-01.wav' // Placeholder
         };
     </script>
     <!-- ===== END CUSTOMIZABLE SECTION ===== -->
@@ -706,6 +790,266 @@
     </div>
 
     <script>
+        // Audio Management System
+        class AudioManager {
+            constructor() {
+                this.sounds = {};
+                this.backgroundMusic = null;
+                this.musicEnabled = true;
+                this.sfxEnabled = true;
+                this.volume = 0.5;
+                this.initAudio();
+                this.setupControls();
+            }
+
+            initAudio() {
+                // Create audio objects for real files
+                this.backgroundMusic = new Audio();
+                this.backgroundMusic.loop = true;
+                this.backgroundMusic.volume = this.volume * 0.3;
+                
+                // Load background music if URL is provided
+                if (AUDIO_SETTINGS.backgroundMusic && !AUDIO_SETTINGS.backgroundMusic.includes('soundjay.com')) {
+                    this.backgroundMusic.src = AUDIO_SETTINGS.backgroundMusic;
+                    this.backgroundMusic.load();
+                }
+                
+                // Sound effects
+                Object.keys(AUDIO_SETTINGS).forEach(key => {
+                    if (key !== 'backgroundMusic') {
+                        this.sounds[key] = new Audio();
+                        this.sounds[key].volume = this.volume;
+                        // Load real audio files if they don't contain placeholder URLs
+                        if (AUDIO_SETTINGS[key] && !AUDIO_SETTINGS[key].includes('soundjay.com')) {
+                            this.sounds[key].src = AUDIO_SETTINGS[key];
+                            this.sounds[key].load();
+                        }
+                    }
+                });
+
+                // For demo purposes, we'll create synthetic sounds using Web Audio API
+                this.createSyntheticSounds();
+            }
+
+            createSyntheticSounds() {
+                // Create AudioContext for synthetic sounds
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create synthetic sounds
+                this.syntheticSounds = {
+                    packOpen: () => this.createTone([400, 600, 800], 0.5, 'sawtooth'),
+                    cardSlam: () => this.createVariablePitchSlam(),
+                    commonReveal: () => this.createTone([523], 0.3, 'sine'),
+                    uncommonReveal: () => this.createTone([659, 784], 0.4, 'sine'),
+                    legendaryReveal: () => this.createTone([523, 659, 784, 1047], 0.8, 'sine'),
+                    allCardsReveal: () => this.createChord([261, 329, 392, 523], 0.6)
+                };
+            }
+
+            createTone(frequencies, duration, waveType = 'sine') {
+                if (!this.sfxEnabled || !this.audioContext) return;
+                
+                const gainNode = this.audioContext.createGain();
+                gainNode.connect(this.audioContext.destination);
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(this.volume * 0.3, this.audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+                frequencies.forEach((freq, index) => {
+                    const oscillator = this.audioContext.createOscillator();
+                    oscillator.type = waveType;
+                    oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                    oscillator.connect(gainNode);
+                    oscillator.start(this.audioContext.currentTime + index * 0.05);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                });
+            }
+
+            createVariablePitchSlam() {
+                if (!this.sfxEnabled || !this.audioContext) return;
+                
+                // Random base frequency between 80Hz and 200Hz
+                const baseFreq = 40 + Math.random() * 150;
+                
+                // Create a "thump" sound with quick decay
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(baseFreq, this.audioContext.currentTime);
+                // Pitch slide down for impact effect
+                oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.3, this.audioContext.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(this.volume * 0.4, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.15);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.15);
+            }
+
+            createChord(frequencies, duration) {
+                if (!this.sfxEnabled || !this.audioContext) return;
+
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        this.createTone([freq], 0.3, 'sine');
+                    }, index * 100);
+                });
+            }
+
+            playBackgroundMusic() {
+                if (!this.musicEnabled) return;
+                
+                // Try to play real audio file first
+                if (this.backgroundMusic.src && this.backgroundMusic.src !== window.location.href) {
+                    this.backgroundMusic.currentTime = 0;
+                    this.backgroundMusic.play().catch(e => {
+                        console.log('Could not play background music file, using synthetic audio:', e);
+                        this.playSyntheticBackgroundMusic();
+                    });
+                } else {
+                    // Fall back to synthetic background music
+                    this.playSyntheticBackgroundMusic();
+                }
+            }
+
+            playSyntheticBackgroundMusic() {
+                if (!this.musicEnabled || !this.audioContext) return;
+                
+                // Create a simple background ambient tone
+                this.stopBackgroundMusic();
+                this.backgroundMusicOscillators = [];
+                
+                const baseFreqs = [65.41, 82.41, 98]; // Low ambient tones
+                baseFreqs.forEach((freq, index) => {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(this.volume * 0.05, this.audioContext.currentTime + 2);
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    oscillator.start();
+                    
+                    this.backgroundMusicOscillators.push({oscillator, gainNode});
+                });
+            }
+
+            stopBackgroundMusic() {
+                // Stop real audio file
+                if (this.backgroundMusic && this.backgroundMusic.src) {
+                    this.backgroundMusic.pause();
+                    this.backgroundMusic.currentTime = 0;
+                }
+                
+                // Stop synthetic audio
+                if (this.backgroundMusicOscillators) {
+                    this.backgroundMusicOscillators.forEach(({oscillator, gainNode}) => {
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.5);
+                        setTimeout(() => oscillator.stop(), 600);
+                    });
+                    this.backgroundMusicOscillators = null;
+                }
+            }
+
+            play(soundName) {
+                if (!this.sfxEnabled) return;
+                
+                // Try to play real audio file first
+                if (this.sounds[soundName] && this.sounds[soundName].src) {
+                    this.sounds[soundName].currentTime = 0;
+                    this.sounds[soundName].play().catch(e => {
+                        console.log(`Could not play ${soundName}, using synthetic sound:`, e);
+                        // Fall back to synthetic sounds
+                        if (this.syntheticSounds[soundName]) {
+                            this.syntheticSounds[soundName]();
+                        }
+                    });
+                } else {
+                    // Use synthetic sounds
+                    if (this.syntheticSounds[soundName]) {
+                        this.syntheticSounds[soundName]();
+                    }
+                }
+            }
+
+            setVolume(volume) {
+                this.volume = volume / 100;
+                
+                // Update all sound volumes
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume = this.volume;
+                });
+                
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.volume = this.volume * 0.3;
+                }
+            }
+
+            toggleMusic() {
+                this.musicEnabled = !this.musicEnabled;
+                if (this.musicEnabled) {
+                    this.playBackgroundMusic();
+                } else {
+                    this.stopBackgroundMusic();
+                }
+                return this.musicEnabled;
+            }
+
+            toggleSFX() {
+                this.sfxEnabled = !this.sfxEnabled;
+                return this.sfxEnabled;
+            }
+
+            setupControls() {
+                const musicToggle = document.getElementById('musicToggle');
+                const sfxToggle = document.getElementById('sfxToggle');
+                const volumeSlider = document.getElementById('volumeSlider');
+
+                musicToggle.addEventListener('click', () => {
+                    const enabled = this.toggleMusic();
+                    musicToggle.classList.toggle('active', enabled);
+                    musicToggle.textContent = enabled ? '🎵 Music ON' : '🎵 Music OFF';
+                });
+
+                // Set initial button text
+                musicToggle.textContent = this.musicEnabled ? '🎵 Music ON' : '🎵 Music OFF';
+
+                sfxToggle.addEventListener('click', () => {
+                    const enabled = this.toggleSFX();
+                    sfxToggle.classList.toggle('active', enabled);
+                    sfxToggle.textContent = enabled ? '🔊 SFX ON' : '🔊 SFX OFF';
+                });
+
+                volumeSlider.addEventListener('input', (e) => {
+                    this.setVolume(e.target.value);
+                });
+
+                // Initialize audio context on first user interaction
+                document.addEventListener('click', () => {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    // Start background music if enabled
+                    if (this.musicEnabled && !this.backgroundMusicOscillators) {
+                        this.playBackgroundMusic();
+                    }
+                }, { once: true });
+            }
+        }
+
+        // Initialize audio manager
+        const audioManager = new AudioManager();
+
         // Initialize
         document.getElementById('packImage').src = PACK_IMAGE;
         
@@ -834,6 +1178,9 @@
             currentCard.classList.remove('flipped');
             canClickCard = false;
             
+            // Play card slam sound
+            audioManager.play('cardSlam');
+            
             // Update title
             updateTitle(card);
             
@@ -877,6 +1224,9 @@
                 currentCard.classList.add('flipped');
                 canClickCard = true;
                 
+                // Play rarity-specific reveal sound
+                audioManager.play(card.rarity + 'Reveal');
+                
                 // Create burst effect based on rarity
                 const rect = currentCard.getBoundingClientRect();
                 const colors = {
@@ -906,6 +1256,9 @@
         function displayAllCards() {
             const container = document.getElementById('allCardsDisplay');
             container.innerHTML = '';
+            
+            // Play all cards reveal sound
+            audioManager.play('allCardsReveal');
             
             // Reset title
             document.getElementById('title').textContent = 'Your Collection!';
@@ -960,6 +1313,9 @@
                 document.getElementById('lockedMessage').style.display = 'block';
                 return;
             }
+            
+            // Play pack opening sound
+            audioManager.play('packOpen');
             
             // Save opened date
             localStorage.setItem(STORAGE_KEY, new Date().toISOString());
