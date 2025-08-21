@@ -289,11 +289,6 @@
                         0 0 80px rgba(255, 255, 255, 0.6);
         }
 
-        .card.flipped:hover {
-            transform: rotateY(190deg) rotateX(-10deg) scale(1.05);
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
-                        0 0 80px rgba(255, 255, 255, 0.6);
-        }
 
         .card-back {
             width: 100%;
@@ -974,22 +969,7 @@
         
         // Create burst effect
         function createBurst(x, y, color, intensity = 20) {
-            const burst = document.createElement('div');
-            burst.className = 'burst-particles';
-            burst.style.left = x + 'px';
-            burst.style.top = y + 'px';
-            document.body.appendChild(burst);
-            
-            for (let i = 0; i < Math.min(intensity, 30); i++) { // Cap particles for performance
-                const particle = document.createElement('div');
-                particle.className = 'burst-particle';
-                particle.style.background = color;
-                particle.style.setProperty('--tx', (Math.random() - 0.5) * 300 + 'px');
-                particle.style.setProperty('--ty', (Math.random() - 0.5) * 300 + 'px');
-                burst.appendChild(particle);
-            }
-            
-            setTimeout(() => burst.remove(), 1000);
+            // discontinue
         }
         
         // Create lightning effect for legendary
@@ -1069,20 +1049,6 @@
                 // Lightning effect
                 createLightning();
                 
-                // Extra burst particles
-                setTimeout(() => {
-                    const rect = currentCard.getBoundingClientRect();
-                    for (let i = 0; i < 3; i++) {
-                        setTimeout(() => {
-                            createBurst(
-                                rect.left + rect.width / 2 + (Math.random() - 0.5) * 100,
-                                rect.top + rect.height / 2 + (Math.random() - 0.5) * 100,
-                                '#ffffff',
-                                25
-                            );
-                        }, i * 200);
-                    }
-                }, 400);
             }
             
             // Auto flip after animation
