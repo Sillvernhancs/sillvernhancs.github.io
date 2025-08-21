@@ -94,7 +94,7 @@
             position: absolute;
             width: 4px;
             height: 4px;
-            background: radial-gradient(circle, rgba(124, 252, 0, 0.8) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(235, 252, 0, 0.8) 0%, transparent 70%);
             border-radius: 50%;
             animation: float 15s infinite linear;
             will-change: transform;
@@ -349,7 +349,7 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            color: #7cfc00;
+            color: #fcb900;
             font-weight: bold;
             backface-visibility: hidden;
             position: absolute;
@@ -551,12 +551,11 @@
 
         .click-hint {
             position: absolute;
-            bottom: -40px;
+            bottom: -60px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(124, 252, 0, 0.6);
+            color: rgba(255, 255, 255, 0.6);
             font-size: 14px;
-            animation: fadeInOut 2s ease-in-out infinite;
             pointer-events: none;
         }
 
@@ -749,11 +748,13 @@
             backgroundMusic: 'balatro/introPad1.ogg',
             packOpen: 'balatro/explosion1.ogg', // Placeholder
             cardSlam: 'balatro/card1.ogg', // Placeholder
-            commonReveal: '', // Placeholder
-            uncommonReveal: '', // Placeholder
-            legendaryReveal: '', // Placeholder
-            legendaryAnoucement: 'balatro/polychrome1.ogg', // Placeholder
-            allCardsReveal: 'balatro/cardFan2.ogg' // Placeholder
+            commonReveal: 'balatro/card3.ogg', // Placeholder
+            uncommonReveal: 'balatro/card3.ogg', // Placeholder
+            legendaryReveal: 'balatro/card3.ogg', // Placeholder
+            legendaryAnoucement: 'balatro/polychrome1.ogg', // Placeholder.  balatro/holo1.ogg
+            uncommonAnoucement: 'balatro/holo1.ogg',
+            allCardsReveal: 'balatro/cardFan2.ogg', // Placeholder
+            allCardsReveal_withLegendary: 'balatro/win.ogg' // Placeholder
         };
     </script>
     <!-- ===== END CUSTOMIZABLE SECTION ===== -->
@@ -795,9 +796,9 @@
         // Simple Audio System
         class AudioManager {
             constructor() {
-                this.musicEnabled = true;
+                this.musicEnabled = false;
                 this.sfxEnabled = true;
-                this.volume = 0.5;
+                this.volume = 0.3;
                 this.backgroundMusic = null;
                 this.initAudio();
                 this.setupControls();
@@ -1035,7 +1036,11 @@
             
             // Set card image
             currentImage.src = card.image;
-            
+
+            if (card.rarity === 'uncommon') {
+                // Play uncommon announcement sound
+                audioManager.play('uncommonAnoucement');
+            }
             // Special effects for legendary
             if (card.rarity === 'legendary') {
                 // Play legendary sound immediately when card appears
@@ -1062,7 +1067,7 @@
                             createBurst(
                                 rect.left + rect.width / 2 + (Math.random() - 0.5) * 100,
                                 rect.top + rect.height / 2 + (Math.random() - 0.5) * 100,
-                                '#ffd700',
+                                '#ffffff',
                                 25
                             );
                         }, i * 200);
@@ -1109,12 +1114,17 @@
             container.innerHTML = '';
             
             // Play all cards reveal sound
-            audioManager.play('allCardsReveal');
+            legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
+            if (legendaryPulled) {
+                audioManager.play('allCardsReveal_withLegendary');
+            } else {
+                audioManager.play('allCardsReveal'); }
             
             // Reset title
             document.getElementById('title').textContent = 'Your Collection!';
             document.getElementById('title').className = 'title';
             
+
             pulledCards.forEach((card, i) => {
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'small-card ' + card.rarity;
@@ -1131,7 +1141,7 @@
                 cardDiv.appendChild(glow);
                 cardDiv.appendChild(img);
                 container.appendChild(cardDiv);
-                
+
                 // Hover effect with burst
                 cardDiv.addEventListener('mouseenter', function(e) {
                     if (card.rarity === 'legendary') {
@@ -1141,6 +1151,8 @@
                 });
             });
             
+            
+
             document.getElementById('cardDisplay').style.display = 'none';
             container.style.display = 'flex';
         }
@@ -1164,7 +1176,8 @@
                 document.getElementById('lockedMessage').style.display = 'block';
                 return;
             }
-            
+            const title = document.getElementById('title');
+            title.textContent = "";
             // Play pack opening sound
             audioManager.play('packOpen');
             
@@ -1193,7 +1206,7 @@
             // Create multiple burst effects
             const rect = pack.getBoundingClientRect();
             setTimeout(() => {
-                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#7cfc00', 25);
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 25);
             }, 500);
             setTimeout(() => {
                 createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 30);
