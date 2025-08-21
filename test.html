@@ -1038,10 +1038,12 @@
             
             const lastDate = new Date(lastOpened);
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            lastDate.setHours(0, 0, 0, 0);
             
-            return today > lastDate;
+            // Set both dates to midnight for comparison
+            const lastMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            return todayMidnight > lastMidnight;
         }
         
         // Get random card based on rarity
