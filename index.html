@@ -33,64 +33,6 @@
             user-drag: none;
         }
 
-        /* Audio Controls */
-        .audio-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .audio-button {
-            background: rgba(124, 252, 0, 0.2);
-            border: 2px solid #7cfc00;
-            color: #7cfc00;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .audio-button:hover {
-            background: rgba(124, 252, 0, 0.4);
-            box-shadow: 0 0 15px rgba(124, 252, 0, 0.5);
-        }
-
-        .audio-button.active {
-            background: #7cfc00;
-            color: #000;
-        }
-
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .volume-slider {
-            width: 60px;
-            height: 4px;
-            background: rgba(124, 252, 0, 0.3);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #7cfc00;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
         /* Animated background particles */
         .particles {
             position: fixed;
@@ -725,37 +667,32 @@
     </style>
 </head>
 <body>
-    <!-- Audio Controls -->
-    <div class="audio-controls">
-        <button class="audio-button active" id="musicToggle">🎵 Music</button>
-        <button class="audio-button active" id="sfxToggle">🔊 SFX</button>
-        <div class="volume-control">
-            <span style="color: #7cfc00; font-size: 12px;">🔊</span>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
-        </div>
-    </div>
-
     <script>
-        // Image protection measures
+        // Image protection measures (disabled in debug mode)
         (function() {
             'use strict';
             
-            // Disable right-click context menu
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true';
             
-            // Disable common keyboard shortcuts for dev tools and saving
-            document.addEventListener('keydown', function(e) {
-                // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
-                if (e.keyCode === 123 || 
-                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
-                    (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+            if (!debugMode) {
+                // Disable right-click context menu
+                document.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
                     return false;
-                }
-            });
+                });
+                
+                // Disable common keyboard shortcuts for dev tools and saving
+                document.addEventListener('keydown', function(e) {
+                    // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
+                    if (e.keyCode === 123 || 
+                        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
+                        (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
             
             // Disable drag and drop on all images
             document.addEventListener('dragstart', function(e) {
@@ -773,35 +710,8 @@
                 }
             });
             
-            // Obfuscate image sources
-            function obfuscateImageSrc(img, src) {
-                // Create a canvas to draw the image
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const tempImg = new Image();
-                
-                tempImg.onload = function() {
-                    canvas.width = tempImg.width;
-                    canvas.height = tempImg.height;
-                    ctx.drawImage(tempImg, 0, 0);
-                    
-                    // Convert to blob URL instead of direct file path
-                    canvas.toBlob(function(blob) {
-                        const url = URL.createObjectURL(blob);
-                        img.src = url;
-                        
-                        // Clean up the blob URL after a delay
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    });
-                };
-                
-                tempImg.src = src;
-            }
-            
             // Override the normal image loading for card images
             window.setProtectedImage = function(imgElement, src) {
-                // For now, just set normally but with additional protections
-                // In production, you might want to implement server-side image streaming
                 imgElement.src = src;
                 
                 // Add additional layer - make images unselectable
@@ -863,7 +773,6 @@
             allCardsReveal_withLegendary: 'balatro/win.ogg' // Placeholder
         };
     </script>
-    <!-- ===== END CUSTOMIZABLE SECTION ===== -->
 
     <div class="particles" id="particles"></div>
     <div class="flash-overlay" id="flashOverlay"></div>
@@ -902,12 +811,11 @@
         // Simple Audio System
         class AudioManager {
             constructor() {
-                this.musicEnabled = false;
+                this.musicEnabled = true;
                 this.sfxEnabled = true;
-                this.volume = 0.3;
+                this.volume = 0.5;
                 this.backgroundMusic = null;
                 this.initAudio();
-                this.setupControls();
             }
 
             initAudio() {
@@ -917,6 +825,13 @@
                     this.backgroundMusic.loop = true;
                     this.backgroundMusic.volume = this.volume * 0.3;
                 }
+                
+                // Start background music on first user interaction
+                document.addEventListener('click', () => {
+                    if (this.musicEnabled) {
+                        this.playBackgroundMusic();
+                    }
+                }, { once: true });
             }
 
             playAudio(filename, volume = 1.0) {
@@ -950,62 +865,10 @@
                     this.playAudio(filename);
                 }
             }
-
-            setVolume(volume) {
-                this.volume = volume / 100;
-                if (this.backgroundMusic) {
-                    this.backgroundMusic.volume = this.volume * 0.3;
-                }
-            }
-
-            toggleMusic() {
-                this.musicEnabled = !this.musicEnabled;
-                if (this.musicEnabled) {
-                    this.playBackgroundMusic();
-                } else {
-                    this.stopBackgroundMusic();
-                }
-                return this.musicEnabled;
-            }
-
-            toggleSFX() {
-                this.sfxEnabled = !this.sfxEnabled;
-                return this.sfxEnabled;
-            }
-
-            setupControls() {
-                const musicToggle = document.getElementById('musicToggle');
-                const sfxToggle = document.getElementById('sfxToggle');
-                const volumeSlider = document.getElementById('volumeSlider');
-
-                musicToggle.addEventListener('click', () => {
-                    const enabled = this.toggleMusic();
-                    musicToggle.classList.toggle('active', enabled);
-                    musicToggle.textContent = enabled ? '🎵 Music ON' : '🎵 Music OFF';
-                });
-
-                sfxToggle.addEventListener('click', () => {
-                    const enabled = this.toggleSFX();
-                    sfxToggle.classList.toggle('active', enabled);
-                    sfxToggle.textContent = enabled ? '🔊 SFX ON' : '🔊 SFX OFF';
-                });
-
-                volumeSlider.addEventListener('input', (e) => {
-                    this.setVolume(e.target.value);
-                });
-
-                // Start background music on first user interaction
-                document.addEventListener('click', () => {
-                    if (this.musicEnabled) {
-                        this.playBackgroundMusic();
-                    }
-                }, { once: true });
-            }
         }
 
         // Initialize audio manager
         const audioManager = new AudioManager();
-
         // Initialize
         document.getElementById('packImage').src = PACK_IMAGE;
         // Apply protection to pack image
@@ -1225,11 +1088,12 @@
             container.innerHTML = '';
             
             // Play all cards reveal sound
-            legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
+            const legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
             if (legendaryPulled) {
                 audioManager.play('allCardsReveal_withLegendary');
             } else {
-                audioManager.play('allCardsReveal'); }
+                audioManager.play('allCardsReveal');
+            }
             
             // Reset title
             document.getElementById('title').textContent = 'Your Collection!';
@@ -1289,6 +1153,7 @@
             }
             const title = document.getElementById('title');
             title.textContent = "";
+            
             // Play pack opening sound
             audioManager.play('packOpen');
             
@@ -1361,6 +1226,7 @@
             `;
             debugPanel.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
+                <div style="margin-bottom: 5px; font-size: 10px; color: #999;">Right-click & F12 enabled</div>
                 <button id="resetDaily" style="
                     background: #7cfc00;
                     color: #000;
