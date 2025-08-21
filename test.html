@@ -20,6 +20,17 @@
             align-items: center;
             overflow: hidden;
             position: relative;
+            /* Disable text/image selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Disable drag and drop */
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
         }
 
         /* Audio Controls */
@@ -240,6 +251,14 @@
             height: 100%;
             object-fit: contain;
             filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+            /* Disable image interactions */
+            pointer-events: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            user-drag: none;
         }
 
         /* Mobile-optimized pack opening animation */
@@ -372,6 +391,14 @@
             height: 100%;
             object-fit: cover;
             border-radius: 15px;
+            /* Disable image interactions */
+            pointer-events: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            user-drag: none;
         }
 
         .rarity-glow {
@@ -601,6 +628,14 @@
             height: 100%;
             object-fit: cover;
             border-radius: 10px;
+            /* Disable image interactions */
+            pointer-events: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            user-drag: none;
         }
 
         .small-card.legendary {
@@ -700,8 +735,85 @@
         </div>
     </div>
 
-    <!-- ===== CUSTOMIZABLE ASSETS SECTION ===== -->
     <script>
+        // Image protection measures
+        (function() {
+            'use strict';
+            
+            // Disable right-click context menu
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Disable common keyboard shortcuts for dev tools and saving
+            document.addEventListener('keydown', function(e) {
+                // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
+                if (e.keyCode === 123 || 
+                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
+                    (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Disable drag and drop on all images
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Additional protection against image theft
+            document.addEventListener('selectstart', function(e) {
+                if (e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Obfuscate image sources
+            function obfuscateImageSrc(img, src) {
+                // Create a canvas to draw the image
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const tempImg = new Image();
+                
+                tempImg.onload = function() {
+                    canvas.width = tempImg.width;
+                    canvas.height = tempImg.height;
+                    ctx.drawImage(tempImg, 0, 0);
+                    
+                    // Convert to blob URL instead of direct file path
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        img.src = url;
+                        
+                        // Clean up the blob URL after a delay
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    });
+                };
+                
+                tempImg.src = src;
+            }
+            
+            // Override the normal image loading for card images
+            window.setProtectedImage = function(imgElement, src) {
+                // For now, just set normally but with additional protections
+                // In production, you might want to implement server-side image streaming
+                imgElement.src = src;
+                
+                // Add additional layer - make images unselectable
+                imgElement.style.webkitUserSelect = 'none';
+                imgElement.style.mozUserSelect = 'none';
+                imgElement.style.msUserSelect = 'none';
+                imgElement.style.userSelect = 'none';
+                imgElement.draggable = false;
+            };
+            
+        })();
+        
         // REPLACE THESE WITH YOUR OWN ASSETS
         const PACK_IMAGE = 'HexapodTCGPack.png';
         
@@ -896,6 +1008,9 @@
 
         // Initialize
         document.getElementById('packImage').src = PACK_IMAGE;
+        // Apply protection to pack image
+        const packImg = document.getElementById('packImage');
+        window.setProtectedImage(packImg, PACK_IMAGE);
         
         // Storage key for daily lock
         const STORAGE_KEY = 'hexapod_last_opened';
@@ -1028,8 +1143,8 @@
             // Update title
             updateTitle(card);
             
-            // Set card image
-            currentImage.src = card.image;
+            // Set card image with protection
+            window.setProtectedImage(currentImage, card.image);
 
             if (card.rarity === 'uncommon') {
                 // Play uncommon announcement sound
@@ -1125,7 +1240,7 @@
                 cardDiv.style.animationDelay = i * 0.1 + 's';
                 
                 const img = document.createElement('img');
-                img.src = card.image;
+                window.setProtectedImage(img, card.image);
                 img.alt = card.name;
                 
                 const glow = document.createElement('div');
