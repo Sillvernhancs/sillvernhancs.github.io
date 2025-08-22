@@ -759,9 +759,9 @@
             backgroundMusic: 'sfx/backtrack.mp3',
             packOpen: 'sfx/tcg pack open.mp3', // Placeholder
             cardSlam: 'sfx/Card Deal 2.wav', // Placeholder
-            commonReveal: 'sfx/Card Deal 3.wav', // Placeholder
-            uncommonReveal: 'sfx/Card Deal 3.wav', // Placeholder
-            legendaryReveal: 'sfx/Card Deal 3.wav', // Placeholder
+            commonReveal: 'sfx/card_deal.mp3', // Placeholder
+            uncommonReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryReveal: 'sfx/card_deal.mp3', // Placeholder
             legendaryAnoucement: 'sfx/legendary annoucement.mp3', // Placeholder.  balatro/holo1.ogg
             uncommonAnoucement: 'sfx/uncommon.mp3',
             allCardsReveal: 'sfx/cardflips.mp3', // Placeholder
@@ -1187,10 +1187,10 @@
                 createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 20);
             }, 400);
             
-            // Trigger white flash explosion earlier
-            setTimeout(() => {
-                document.getElementById('flashOverlay').classList.add('active');
-            }, 600);
+            // // Trigger white flash explosion earlier
+            // setTimeout(() => {
+            //     document.getElementById('flashOverlay').classList.add('active');
+            // }, 600);
             
             // Show first card after shortened animation sequence
             setTimeout(() => {
