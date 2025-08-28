@@ -1,0 +1,655 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    /* Disable text/image selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Disable drag and drop */
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+}
+
+/* Animated background particles */
+.particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, rgba(235, 252, 0, 0.8) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: float 15s infinite linear;
+    will-change: transform;
+}
+
+@keyframes float {
+    from {
+        transform: translateY(100vh) translateX(0) translateZ(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100vh) translateX(100px) translateZ(0);
+        opacity: 0;
+    }
+}
+
+/* White flash overlay for pack opening */
+.flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.2) 70%, transparent 100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 999;
+    will-change: opacity, transform;
+}
+
+.flash-overlay.active {
+    animation: flashExplosion 1.5s ease-out forwards;
+}
+
+@keyframes flashExplosion {
+    0% {
+        opacity: 0;
+        transform: scale(0.1);
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 30px;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    perspective: 1000px;
+    transform: scale(1.2);
+}
+
+.title {
+    color: #7cfc00;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(124, 252, 0, 0.5),
+                    0 0 40px rgba(124, 252, 0, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+    transition: all 0.3s ease;
+    min-height: 35px;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.title.card-name {
+    animation: none;
+    color: #fff;
+}
+
+.title.card-name.common {
+    text-shadow: 0 0 20px rgba(150, 150, 150, 0.8);
+}
+
+.title.card-name.uncommon {
+    color: #0096ff;
+    text-shadow: 0 0 20px rgba(0, 150, 255, 0.8);
+}
+
+.title.card-name.legendary {
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                    0 0 60px rgba(255, 215, 0, 0.5);
+    animation: legendaryPulse 1s ease-in-out infinite;
+}
+
+@keyframes legendaryPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.pack-container {
+    position: relative;
+    width: 200px;
+    height: 280px;
+    margin: 0 auto 30px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.pack-container:hover {
+    transform: rotateY(10deg) rotateX(-10deg) translateZ(20px);
+}
+
+.pack {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: all 0.3s ease;
+}
+
+.pack:hover {
+    filter: brightness(1.2) drop-shadow(0 0 30px rgba(252, 214, 0, 0.5));
+}
+
+.pack-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+    /* Disable image interactions */
+    pointer-events: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    user-drag: none;
+}
+
+/* Mobile-optimized pack opening animation */
+.pack.opening {
+    animation: packOpenMobile 1.2s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes packOpenMobile {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    40% {
+        transform: scale(1.3) rotate(10deg);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(2) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(4) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Simplified energy rings for mobile */
+.energy-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border: 2px solid rgba(252, 193, 0, 0.8);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+.energy-ring.active {
+    animation: energyExpandMobile 1s ease-out forwards;
+}
+
+@keyframes energyExpandMobile {
+    0% {
+        width: 100px;
+        height: 100px;
+        opacity: 1;
+    }
+    100% {
+        width: 400px;
+        height: 400px;
+        opacity: 0;
+    }
+}
+
+.card-display {
+    display: none;
+    position: relative;
+    width: 250px;
+    height: 350px;
+    margin: 0 auto;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+.card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+    cursor: pointer;
+    will-change: transform;
+}
+
+.card:hover {
+    transform: rotateY(10deg) rotateX(-10deg) scale(1.05);
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
+                0 0 80px rgba(255, 255, 255, 0.6);
+}
+
+
+.card-back {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, #2d5016 0%, #0f1f05 100%);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fcb900;
+    font-weight: bold;
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.card-front {
+    width: 100%;
+    height: 100%;
+    transform: rotateY(180deg);
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    backface-visibility: hidden;
+}
+
+.card.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 15px;
+    /* Disable image interactions */
+    pointer-events: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    user-drag: none;
+}
+
+.rarity-glow {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border-radius: 25px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.card.common .rarity-glow {
+    background: radial-gradient(ellipse at center, rgba(150, 150, 150, 0.8), transparent);
+    animation: commonGlow 2s ease-in-out infinite;
+}
+
+.card.uncommon .rarity-glow {
+    background: radial-gradient(ellipse at center, rgba(0, 150, 255, 0.8), transparent);
+    animation: uncommonGlow 2s ease-in-out infinite;
+}
+
+.card.legendary .rarity-glow {
+    background: radial-gradient(ellipse at center, rgba(255, 215, 0, 1), rgba(255, 150, 0, 0.5), transparent);
+    animation: legendaryGlow 1s ease-in-out infinite;
+}
+
+.card.flipped .rarity-glow {
+    opacity: 1;
+}
+
+@keyframes commonGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(150, 150, 150, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(150, 150, 150, 0.8); }
+}
+
+@keyframes uncommonGlow {
+    0%, 100% { box-shadow: 0 0 30px rgba(0, 150, 255, 0.6); }
+    50% { box-shadow: 0 0 50px rgba(0, 150, 255, 0.9); }
+}
+
+@keyframes legendaryGlow {
+    0%, 100% { 
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.8),
+                    0 0 80px rgba(255, 215, 0, 0.6),
+                    0 0 120px rgba(255, 215, 0, 0.4);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 60px rgba(255, 215, 0, 1),
+                    0 0 100px rgba(255, 215, 0, 0.8),
+                    0 0 140px rgba(255, 215, 0, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+/* Card slam animation - optimized */
+.card-slam {
+    animation: cardSlam 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes cardSlam {
+    0% {
+        transform: translateY(-150vh) scale(0.3) rotateZ(720deg) translateZ(0);
+        opacity: 0;
+    }
+    60% {
+        transform: translateY(20px) scale(1.1) rotateZ(5deg) translateZ(0);
+        opacity: 1;
+    }
+    80% {
+        transform: translateY(-5px) scale(0.95) rotateZ(-2deg) translateZ(0);
+    }
+    100% {
+        transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+    }
+}
+
+/* Legendary card special entrance - optimized */
+.card.legendary.card-slam {
+    animation: legendarySlam 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+@keyframes legendarySlam {
+    0% {
+        transform: translateY(-200vh) scale(0.1) rotateZ(1440deg) translateZ(0);
+        opacity: 0;
+        filter: brightness(3) hue-rotate(0deg);
+    }
+    40% {
+        transform: translateY(-50px) scale(1.5) rotateZ(360deg) translateZ(0);
+        opacity: 1;
+        filter: brightness(2) hue-rotate(180deg);
+    }
+    60% {
+        transform: translateY(30px) scale(1.2) rotateZ(10deg) translateZ(0);
+        filter: brightness(1.5) hue-rotate(360deg);
+    }
+    80% {
+        transform: translateY(-10px) scale(0.9) rotateZ(-5deg) translateZ(0);
+        filter: brightness(1.2) hue-rotate(0deg);
+    }
+    100% {
+        transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+        filter: brightness(1) hue-rotate(0deg);
+    }
+}
+
+/* Lightning effect for legendary cards */
+.lightning {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+}
+
+.lightning.active {
+    display: block;
+}
+
+.lightning-bolt {
+    position: absolute;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, #fff, transparent);
+    opacity: 0;
+    animation: lightning 0.3s ease-out forwards;
+    will-change: opacity, transform;
+}
+
+@keyframes lightning {
+    0% {
+        opacity: 0;
+        transform: scaleY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleY(1);
+    }
+}
+
+/* Screen shake for legendary */
+@keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5px, 5px); }
+    20% { transform: translate(5px, -5px); }
+    30% { transform: translate(-3px, 3px); }
+    40% { transform: translate(3px, -3px); }
+    50% { transform: translate(-2px, 2px); }
+    60% { transform: translate(2px, -2px); }
+    70% { transform: translate(-4px, 4px); }
+    80% { transform: translate(4px, -4px); }
+    90% { transform: translate(-1px, 1px); }
+}
+
+.screen-shake {
+    animation: screenShake 0.5s ease-out;
+}
+
+.click-hint {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+
+.all-cards-display {
+    display: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+}
+
+.small-card {
+    width: 120px;
+    height: 168px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    position: relative;
+    opacity: 0;
+    animation: cardFadeIn 0.5s ease-out forwards;
+    transform-style: preserve-3d;
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.8) translateZ(0);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1) translateZ(0);
+    }
+}
+
+.small-card:hover {
+    transform: scale(1.15) translateY(-10px) rotateZ(2deg) translateZ(20px);
+    z-index: 100;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.small-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    /* Disable image interactions */
+    pointer-events: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    user-drag: none;
+}
+
+.small-card.legendary {
+    animation: cardFadeIn 0.5s ease-out forwards, legendaryFloat 3s ease-in-out infinite;
+}
+
+@keyframes legendaryFloat {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-5px) translateZ(0); }
+}
+
+.burst-particles {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.burst-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: burst 1s ease-out forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes burst {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+    }
+}
+
+.locked-message {
+    color: #ff4444;
+    font-size: 16px;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 68, 68, 0.1);
+    border: 2px solid #ff4444;
+    border-radius: 10px;
+}
+
+/* Legendary announcement */
+.legendary-announcement {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                    0 0 60px rgba(255, 215, 0, 0.6),
+                    0 0 90px rgba(255, 215, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1001;
+    will-change: transform, opacity;
+}
+
+.legendary-announcement.show {
+    animation: legendaryAnnounce 2s ease-out forwards;
+}
+
+@keyframes legendaryAnnounce {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+        letter-spacing: 20px;
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.5);
+        letter-spacing: 5px;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+        letter-spacing: 2px;
+    }
+}
