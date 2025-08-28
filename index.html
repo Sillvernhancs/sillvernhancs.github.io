@@ -7,35 +7,32 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Discord Embedded App SDK -->
-    <script src="https://discord.com/api/guilds/embed.js"></script>
+    <!-- Discord Only Message -->
+    <div id="discordOnly" style="display: none; text-align: center; padding: 50px; color: white;">
+        <h1 style="color: #5865f2;">Discord Activity Only</h1>
+        <p>This pack opener only works when launched as a Discord Activity.</p>
+        <p>Join our Discord server and look for the pack opener activity!</p>
+        <a href="https://discord.gg/your-invite" target="_blank" style="color: #5865f2; text-decoration: underline;">Join Discord Server</a>
+    </div>
 
+    <!-- Auth Loading -->
+    <div id="authLoading" style="display: none; text-align: center; padding: 50px; color: #7cfc00;">
+        <h2>Connecting to Discord...</h2>
+        <div style="width: 50px; height: 50px; border: 5px solid rgba(124, 252, 0, 0.3); border-top: 5px solid #7cfc00; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto;"></div>
+        <p>Please authorize this app to continue</p>
+    </div>
+
+    <!-- User Info -->
+    <div id="userInfo" style="display: none; position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; color: white; z-index: 1000;">
+        <img id="userAvatar" src="" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 8px;">
+        <span id="username">Loading...</span>
+    </div>
+
+    <!-- Main Game Content (from your original file) -->
     <div class="particles" id="particles"></div>
     <div class="flash-overlay" id="flashOverlay"></div>
     <div class="lightning" id="lightning"></div>
     <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
-    
-    <!-- Discord Only Message -->
-    <div class="discord-only" id="discordOnly" style="display: none;">
-        <h1>Discord Only</h1>
-        <p>This pack opener only works when launched as a Discord Activity from the Hexapod Discord server.</p>
-        <a href="https://discord.gg/Z3fCuYamcz" class="discord-button" target="_blank">
-            Join Discord Server
-        </a>
-    </div>
-
-    <!-- Authentication Loading -->
-    <div class="auth-loading" id="authLoading" style="display: none;">
-        <h2>Connecting to Discord...</h2>
-        <div class="spinner"></div>
-        <p>Please authorize this app to continue</p>
-    </div>
-
-    <!-- User Info Display -->
-    <div class="user-info" id="userInfo" style="display: none;">
-        <img src="" alt="User Avatar" class="user-avatar" id="userAvatar">
-        <span id="username">Loading...</span>
-    </div>
     
     <div class="container" id="mainContainer">
         <h1 class="title" id="title">Open Your Daily Pack!</h1>
@@ -64,94 +61,119 @@
         </div>
     </div>
 
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
     <script>
-        // REPLACE THESE WITH YOUR ACTUAL VALUES
-        const DISCORD_CLIENT_ID = 'YOUR_DISCORD_CLIENT_ID'; // Replace with your Discord App Client ID
-        const YOUR_SERVER_INVITE = 'https://discord.gg/your-server-invite'; // Replace with your server invite
+        // CONFIGURATION - REPLACE THESE VALUES
+        const DISCORD_CLIENT_ID = 'YOUR_DISCORD_CLIENT_ID_HERE';
+        const YOUR_SERVER_INVITE = 'https://discord.gg/your-invite';
         
-        // Discord Integration
+        // Discord Integration Variables
         let discordUser = null;
         let discordSdk = null;
-        let isDiscordActivity = false;
+        let isInDiscord = false;
 
-        // Check if running in Discord Activity context
-        function isRunningInDiscord() {
-            // Check multiple indicators that we're in Discord
-            return window.parent !== window.self || 
-                   window.location.hostname.includes('discordsays.com') ||
-                   window.location.hostname.includes('discord.com') ||
-                   window.DiscordSDK !== undefined;
+        // Improved Discord Detection
+        function checkIfInDiscord() {
+            console.log('Checking Discord context...');
+            console.log('window.parent !== window:', window.parent !== window);
+            console.log('location.hostname:', window.location.hostname);
+            console.log('referrer:', document.referrer);
+            console.log('user agent:', navigator.userAgent);
+            
+            // Multiple ways to detect Discord iframe
+            const inIframe = window.parent !== window;
+            const discordDomain = window.location.hostname.includes('discord') || 
+                                document.referrer.includes('discord');
+            const discordUA = navigator.userAgent.includes('Discord');
+            
+            // Check for Discord-specific globals that might be injected
+            const hasDiscordGlobals = typeof window.DiscordSDK !== 'undefined' || 
+                                    typeof window.Discord !== 'undefined';
+            
+            const result = inIframe || discordDomain || discordUA || hasDiscordGlobals;
+            console.log('Discord detection result:', result);
+            return result;
         }
 
-        // Initialize Discord SDK
-        async function initializeDiscord() {
-            try {
-                // Try to load Discord SDK dynamically
-                if (!window.DiscordSDK) {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.0.0/output/discord.js';
-                    document.head.appendChild(script);
-                    
-                    await new Promise((resolve, reject) => {
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        setTimeout(reject, 5000); // 5 second timeout
-                    });
+        // Try to load Discord SDK dynamically
+        async function loadDiscordSDK() {
+            return new Promise((resolve, reject) => {
+                if (window.DiscordSDK) {
+                    resolve();
+                    return;
                 }
-
-                discordSdk = new DiscordSDK(DISCORD_CLIENT_ID);
-                await discordSdk.ready();
                 
-                // Request authorization
-                const { code } = await discordSdk.commands.authorize({
+                const script = document.createElement('script');
+                script.src = 'https://discord.com/api/guilds/embed.js';
+                script.onload = () => {
+                    console.log('Discord SDK loaded');
+                    resolve();
+                };
+                script.onerror = (error) => {
+                    console.error('Failed to load Discord SDK:', error);
+                    reject(error);
+                };
+                document.head.appendChild(script);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => reject(new Error('SDK load timeout')), 10000);
+            });
+        }
+
+        // Initialize Discord authentication
+        async function initDiscordAuth() {
+            try {
+                console.log('Initializing Discord authentication...');
+                
+                await loadDiscordSDK();
+                
+                if (!window.DiscordSDK) {
+                    throw new Error('Discord SDK not available');
+                }
+                
+                discordSdk = new DiscordSDK(DISCORD_CLIENT_ID);
+                console.log('Discord SDK created');
+                
+                await discordSdk.ready();
+                console.log('Discord SDK ready');
+                
+                // Try to authorize
+                const authResult = await discordSdk.commands.authorize({
                     client_id: DISCORD_CLIENT_ID,
                     response_type: 'code',
                     state: '',
                     prompt: 'none',
-                    scope: ['identify'],
+                    scope: ['identify']
                 });
-
-                // In a real implementation, you'd exchange this code for an access token on your backend
-                // For this demo, we'll simulate getting user info
-                const mockUserData = await simulateTokenExchange(code);
                 
-                // Authenticate with Discord
-                const auth = await discordSdk.commands.authenticate({
-                    access_token: mockUserData.access_token,
-                });
-
-                discordUser = auth.user;
-                isDiscordActivity = true;
+                console.log('Authorization result:', authResult);
                 
-                // Show user info
+                // For demo purposes, create a mock user
+                // In production, you'd exchange the code for a real access token
+                discordUser = {
+                    id: 'demo_' + Math.random().toString(36).substr(2, 9),
+                    username: 'DiscordUser' + Math.floor(Math.random() * 1000),
+                    avatar: null
+                };
+                
+                console.log('Mock user created:', discordUser);
+                
                 displayUserInfo(discordUser);
-                
                 return true;
+                
             } catch (error) {
                 console.error('Discord authentication failed:', error);
                 return false;
             }
         }
 
-        // Simulate token exchange (replace with real backend call)
-        async function simulateTokenExchange(code) {
-            // In production, send the code to your backend to exchange for access token
-            // For now, we'll simulate this process
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve({
-                        access_token: 'simulated_token_' + code.slice(-10),
-                        user: {
-                            id: 'user_' + Math.random().toString(36).substr(2, 9),
-                            username: 'DiscordUser' + Math.floor(Math.random() * 1000),
-                            avatar: null
-                        }
-                    });
-                }, 1000);
-            });
-        }
-
-        // Display user info in the top right
+        // Display user information
         function displayUserInfo(user) {
             const userInfo = document.getElementById('userInfo');
             const userAvatar = document.getElementById('userAvatar');
@@ -162,21 +184,21 @@
             if (user.avatar) {
                 userAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
             } else {
-                userAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.id) % 5}.png`;
+                // Default Discord avatar
+                userAvatar.src = `https://cdn.discordapp.com/embed/avatars/${Math.floor(Math.random() * 5)}.png`;
             }
             
             userInfo.style.display = 'block';
         }
 
-        // Modified storage key to include Discord user ID
+        // Modified storage functions for per-user rate limiting
         function getStorageKey() {
-            if (discordUser) {
+            if (discordUser && discordUser.id) {
                 return `hexapod_last_opened_${discordUser.id}`;
             }
-            return 'hexapod_last_opened'; // Fallback for non-Discord use
+            return 'hexapod_last_opened_fallback';
         }
 
-        // Check if pack can be opened today (now user-specific)
         function canOpenPack() {
             const storageKey = getStorageKey();
             const lastOpened = localStorage.getItem(storageKey);
@@ -191,44 +213,48 @@
             return todayMidnight > lastMidnight;
         }
 
-        // Save pack opening (now user-specific)
         function savePackOpening() {
             const storageKey = getStorageKey();
             localStorage.setItem(storageKey, new Date().toISOString());
         }
 
-        // Main initialization
-        async function initialize() {
-            // Check if running in Discord
-            if (isRunningInDiscord()) {
-                console.log('Running in Discord context');
-                document.getElementById('authLoading').style.display = 'block';
-                document.getElementById('mainContainer').style.display = 'none';
-                
-                const success = await initializeDiscord();
-                
-                if (success) {
-                    document.getElementById('authLoading').style.display = 'none';
-                    document.getElementById('mainContainer').style.display = 'block';
-                    initializeGame();
-                } else {
-                    document.getElementById('authLoading').style.display = 'none';
-                    document.getElementById('discordOnly').style.display = 'block';
-                }
-            } else {
-                console.log('Not running in Discord context');
+        // Main initialization function
+        async function initializeApp() {
+            console.log('Starting app initialization...');
+            
+            isInDiscord = checkIfInDiscord();
+            
+            if (!isInDiscord) {
+                console.log('Not in Discord - showing Discord-only message');
                 document.getElementById('discordOnly').style.display = 'block';
                 document.getElementById('mainContainer').style.display = 'none';
-                
-                // Update the Discord button with your actual invite link
-                const discordButton = document.querySelector('.discord-button');
-                discordButton.href = YOUR_SERVER_INVITE;
+                return;
+            }
+            
+            console.log('In Discord context - attempting authentication');
+            document.getElementById('authLoading').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+            
+            const authSuccess = await initDiscordAuth();
+            
+            document.getElementById('authLoading').style.display = 'none';
+            
+            if (authSuccess) {
+                console.log('Authentication successful - starting game');
+                document.getElementById('mainContainer').style.display = 'block';
+                initializeGame();
+            } else {
+                console.log('Authentication failed - showing Discord-only message');
+                document.getElementById('discordOnly').style.display = 'block';
             }
         }
 
-        // Initialize the game (existing functionality)
+        // Initialize the original game code
         function initializeGame() {
-            // Image protection measures (disabled in debug mode)
+            // Copy your original game initialization code here
+            console.log('Initializing game...');
+            
+            // Your original script content from the provided file
             (function() {
                 'use strict';
                 
@@ -273,13 +299,11 @@
                     imgElement.style.userSelect = 'none';
                     imgElement.draggable = false;
                 };
-                
             })();
             
-            // REPLACE THESE WITH YOUR OWN ASSETS
+            // Game constants
             const PACK_IMAGE = 'HexapodTCGPack.png';
             
-            // Card collection with rarity and image URLs
             const CARD_COLLECTION = {
                 common: [
                     { name: 'The Soldier Ant', image: 'bugs_card/ant.png' },
@@ -303,14 +327,12 @@
                 ]
             };
 
-            // Rarity chances (must add up to 100)
             const RARITY_CHANCES = {
-                common: 75,     // ~74% chance
-                uncommon: 23,   // ~23% chance
-                legendary: 2      // 3% chance
+                common: 75,
+                uncommon: 23,
+                legendary: 2
             };
 
-            // Audio settings
             const AUDIO_SETTINGS = {
                 backgroundMusic: 'sfx/backtrack.mp3',
                 packOpen: 'sfx/tcg pack open.mp3',
@@ -324,7 +346,7 @@
                 allCardsReveal_withLegendary: ''
             };
 
-            // Audio Management System
+            // Audio Manager
             class AudioManager {
                 constructor() {
                     this.musicEnabled = true;
@@ -412,10 +434,8 @@
                 }
             }
 
-            // Initialize audio manager
             const audioManager = new AudioManager();
             
-            // Initialize pack image
             document.getElementById('packImage').src = PACK_IMAGE;
             const packImg = document.getElementById('packImage');
             window.setProtectedImage(packImg, PACK_IMAGE);
@@ -424,7 +444,6 @@
             let pulledCards = [];
             let canClickCard = false;
             
-            // Create background particles
             function createParticles() {
                 const container = document.getElementById('particles');
                 for (let i = 0; i < 20; i++) {
@@ -437,7 +456,6 @@
                 }
             }
             
-            // Get random card based on rarity
             function getRandomCard() {
                 const rand = Math.random() * 100;
                 let rarity;
@@ -456,7 +474,6 @@
                 return { ...card, rarity };
             }
             
-            // Generate 5 random cards
             function generatePack() {
                 pulledCards = [];
                 for (let i = 0; i < 5; i++) {
@@ -464,12 +481,10 @@
                 }
             }
             
-            // Create burst effect (simplified for performance)
             function createBurst(x, y, color, intensity = 20) {
-                // Placeholder - you can implement particle effects here
+                // Placeholder for burst effects
             }
             
-            // Create lightning effect for legendary
             function createLightning() {
                 const lightning = document.getElementById('lightning');
                 lightning.innerHTML = '';
@@ -488,18 +503,15 @@
                 }, 1000);
             }
             
-            // Update title with card name
             function updateTitle(card) {
                 const title = document.getElementById('title');
                 title.textContent = card.name;
                 title.className = 'title card-name ' + card.rarity;
             }
             
-            // Show card with animation
             function showCard(index) {
                 const card = pulledCards[index];
                 const cardElement = document.getElementById('currentCard');
-                const cardImage = document.getElementById('cardImage');
                 
                 const newCard = cardElement.cloneNode(true);
                 cardElement.parentNode.replaceChild(newCard, cardElement);
@@ -561,7 +573,6 @@
                 });
             }
             
-            // Display all cards
             function displayAllCards() {
                 const container = document.getElementById('allCardsDisplay');
                 container.innerHTML = '';
@@ -575,7 +586,6 @@
                 
                 document.getElementById('title').textContent = 'Your Collection!';
                 document.getElementById('title').className = 'title';
-                
 
                 pulledCards.forEach((card, i) => {
                     const cardDiv = document.createElement('div');
@@ -601,12 +611,11 @@
                         }
                     });
                 });
-                
+
                 document.getElementById('cardDisplay').style.display = 'none';
                 container.style.display = 'flex';
             }
             
-            // Pack click handler
             document.getElementById('packContainer').addEventListener('click', function() {
                 if (!canOpenPack()) {
                     document.getElementById('lockedMessage').style.display = 'block';
@@ -617,8 +626,7 @@
                 
                 audioManager.play('packOpen');
                 
-                // Save opened date with user-specific key
-                savePackOpening();
+                savePackOpening(); // This now uses the Discord user ID
                 
                 generatePack();
                 currentCardIndex = 0;
@@ -649,7 +657,6 @@
                 }, 1300);
             });
             
-            // Initialize particles
             createParticles();
             
             // Check if pack is locked on load
@@ -662,8 +669,15 @@
             }
         }
 
-        // Start the application
-        initialize();
+        // Add a manual override for testing
+        window.testDiscordMode = function() {
+            console.log('Testing Discord mode manually');
+            isInDiscord = true;
+            initializeApp();
+        };
+
+        // Start the app
+        initializeApp();
     </script>
 </body>
 </html>
