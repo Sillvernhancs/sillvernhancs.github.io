@@ -7,32 +7,117 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Discord Only Message -->
-    <div id="discordOnly" style="display: none; text-align: center; padding: 50px; color: white;">
-        <h1 style="color: #5865f2;">Discord Activity Only</h1>
-        <p>This pack opener only works when launched as a Discord Activity.</p>
-        <p>Join our Discord server and look for the pack opener activity!</p>
-        <a href="https://discord.gg/your-invite" target="_blank" style="color: #5865f2; text-decoration: underline;">Join Discord Server</a>
-    </div>
+    <script>
+        // Image protection measures (disabled in debug mode)
+        (function() {
+            'use strict';
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true';
+            
+            if (!debugMode) {
+                // Disable right-click context menu
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                // Disable common keyboard shortcuts for dev tools and saving
+                document.addEventListener('keydown', function(e) {
+                    // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
+                    if (e.keyCode === 123 || 
+                        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
+                        (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+            
+            // Disable drag and drop on all images
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Additional protection against image theft
+            document.addEventListener('selectstart', function(e) {
+                if (e.target.tagName === 'IMG') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Override the normal image loading for card images
+            window.setProtectedImage = function(imgElement, src) {
+                imgElement.src = src;
+                
+                // Add additional layer - make images unselectable
+                imgElement.style.webkitUserSelect = 'none';
+                imgElement.style.mozUserSelect = 'none';
+                imgElement.style.msUserSelect = 'none';
+                imgElement.style.userSelect = 'none';
+                imgElement.draggable = false;
+            };
+            
+        })();
+        
+        // REPLACE THESE WITH YOUR OWN ASSETS
+        const PACK_IMAGE = 'HexapodTCGPack.png';
+        
+        // Card collection with rarity and image URLs
+        const CARD_COLLECTION = {
+            common: [
+                { name: 'The Soldier Ant', image: 'bugs_card/ant.png' },
+                { name: 'The House Spider', image: 'bugs_card/spider.png'},
+                { name: 'The Bumble Bee', image: 'bugs_card/bee.png'},
+                { name: 'The Pill Bug', image: 'bugs_card/pill.png'},
+                { name: 'The Grass Hopper', image: 'bugs_card/cricket.png'},
+            ],
+            uncommon: [
+                { name: 'The Tiger Beetle', image: 'bugs_card/tiger.png' },
+                { name: 'The Black Beetle', image: 'bugs_card/blackbeetle.png' },
+                { name: 'The Diving Bell Spider', image: 'bugs_card/divingbell.png' },
+                { name: 'The Dung Beetle', image: 'bugs_card/dungbeetle.png' },
+                { name: 'The Mole Cricket', image: 'bugs_card/mole.png' },
+                { name: 'The Wasp', image: 'bugs_card/wasp.png' },
+            ],
+            legendary: [
+                { name: 'The Praying Mantis', image: 'bugs_card/mantis.png' },
+                { name: 'The Dragon Fly', image: 'bugs_card/dragon.png' },
+                { name: 'The Rhino Beetle', image: 'bugs_card/rihno.png' },
+            ]
+        };
 
-    <!-- Main Game Content -->
+        // Rarity chances (must add up to 100)
+        const RARITY_CHANCES = {
+            common: 75,     // ~74% chance
+            uncommon: 23,   // ~23% chance
+            legendary: 2      // 3% chance
+        };
+
+        // Audio settings
+        const AUDIO_SETTINGS = {
+            // Replace these URLs with your own audio files
+            backgroundMusic: 'sfx/backtrack.mp3',
+            packOpen: 'sfx/tcg pack open.mp3', // Placeholder
+            cardSlam: 'sfx/Card Deal 2.wav', // Placeholder
+            commonReveal: 'sfx/card_deal.mp3', // Placeholder
+            uncommonReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryAnoucement: 'sfx/legendary annoucement.mp3', // Placeholder.  balatro/holo1.ogg
+            uncommonAnoucement: 'sfx/uncommon.mp3',
+            allCardsReveal: 'sfx/cardflips.mp3', // Placeholder
+            allCardsReveal_withLegendary: '' // Placeholder
+        };
+    </script>
+
     <div class="particles" id="particles"></div>
     <div class="flash-overlay" id="flashOverlay"></div>
     <div class="lightning" id="lightning"></div>
     <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
-    
-    <!-- User Info - shows when authenticated -->
-    <div id="userInfo" style="display: none; position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; color: #7cfc00; z-index: 1000;">
-        <span id="userDisplay">Discord User</span>
-    </div>
-    
-    <!-- Discord Auth Button - shows when in Discord but not authenticated -->
-    <div id="authPrompt" style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(88, 101, 242, 0.9); color: white; padding: 15px 20px; border-radius: 10px; z-index: 1000;">
-        <p style="margin: 0 0 10px 0;">Connect your Discord account to open packs</p>
-        <button id="connectDiscord" style="background: white; color: #5865f2; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-            Connect Discord
-        </button>
-    </div>
     
     <div class="container" id="mainContainer">
         <h1 class="title" id="title">Open Your Daily Pack!</h1>
@@ -62,634 +147,548 @@
     </div>
 
     <script>
-        // Simple Discord detection - just check if we're in an iframe
-        let discordUser = null;
-        let isInDiscord = false;
-        let isAuthenticated = false;
-
-        function detectDiscordContext() {
-            console.log('=== DISCORD DETECTION DEBUG ===');
-            console.log('window.parent !== window:', window.parent !== window);
-            console.log('window.top !== window:', window.top !== window);
-            console.log('location.href:', window.location.href);
-            console.log('document.referrer:', document.referrer);
-            console.log('window.location.ancestorOrigins:', window.location.ancestorOrigins);
-            
-            // Simple detection: if we're in an iframe, assume Discord
-            const inIframe = window.parent !== window || window.top !== window;
-            
-            if (inIframe) {
-                console.log('DETECTED: Running in iframe (likely Discord Activity)');
-                return true;
-            } else {
-                console.log('NOT DETECTED: Running in main window (direct browser access)');
-                return false;
+        // Audio Management System
+        // Simple Audio System
+        class AudioManager {
+            constructor() {
+                this.musicEnabled = true;
+                this.sfxEnabled = true;
+                this.volume = 0.5;
+                this.backgroundMusic = null;
+                this.musicWasPlaying = false;
+                this.initAudio();
+                this.setupVisibilityHandling();
             }
-        }
 
-        // Load Discord SDK for authentication (only when needed)
-        async function loadDiscordSDK() {
-            if (window.DiscordSDK) {
-                return true;
-            }
-            
-            try {
-                // Use the correct CDN URL
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.2.0/output/discord.js';
-                
-                await new Promise((resolve, reject) => {
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                    setTimeout(reject, 10000); // 10 second timeout
-                });
-                
-                return window.DiscordSDK !== undefined;
-            } catch (error) {
-                console.error('Failed to load Discord SDK:', error);
-                return false;
-            }
-        }
-
-        // Authenticate with Discord to get real user ID
-        async function authenticateDiscord() {
-            try {
-                console.log('Starting Discord authentication...');
-                
-                const sdkLoaded = await loadDiscordSDK();
-                if (!sdkLoaded) {
-                    throw new Error('Could not load Discord SDK');
+            initAudio() {
+                // Background music
+                if (AUDIO_SETTINGS.backgroundMusic) {
+                    this.backgroundMusic = new Audio(AUDIO_SETTINGS.backgroundMusic);
+                    this.backgroundMusic.loop = true;
+                    this.backgroundMusic.volume = this.volume * 0.3;
                 }
                 
-                const discordSdk = new DiscordSDK('1409944634045763625'); // Replace with your client ID
-                
-                await discordSdk.ready();
-                console.log('Discord SDK ready');
-                
-                // Try to authorize (this will show Discord's OAuth prompt)
-                const { code } = await discordSdk.commands.authorize({
-                    client_id: '1409944634045763625',
-                    response_type: 'code',
-                    state: '',
-                    prompt: 'none',
-                    scope: ['identify']
+                // Start background music on first user interaction
+                document.addEventListener('click', () => {
+                    if (this.musicEnabled) {
+                        this.playBackgroundMusic();
+                    }
+                }, { once: true });
+            }
+
+            setupVisibilityHandling() {
+                // Handle page visibility changes (tab switching, app backgrounding)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        // Page is hidden (user switched tabs or app went to background)
+                        if (this.backgroundMusic && !this.backgroundMusic.paused) {
+                            this.musicWasPlaying = true;
+                            this.backgroundMusic.pause();
+                        }
+                    } else {
+                        // Page is visible again
+                        if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
+                            this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
+                        }
+                    }
                 });
+
+                // Additional handling for window focus/blur (desktop browsers)
+                window.addEventListener('blur', () => {
+                    if (this.backgroundMusic && !this.backgroundMusic.paused) {
+                        this.musicWasPlaying = true;
+                        this.backgroundMusic.pause();
+                    }
+                });
+
+                window.addEventListener('focus', () => {
+                    if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
+                        this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
+                    }
+                });
+            }
+
+            playAudio(filename, volume = 1.0) {
+                if (!this.sfxEnabled || !filename) return;
                 
-                // In a real app, you'd exchange this code for an access token on your backend
-                // For now, create a user ID from the code (this is simplified)
-                discordUser = {
-                    id: 'discord_' + btoa(code).slice(0, 10), // Create consistent ID from code
-                    username: 'Discord User',
-                    avatar: null
-                };
+                // Create new audio instance for stacking
+                const audio = new Audio(filename);
+                audio.volume = this.volume * volume;
+                audio.play().catch(e => console.log('Could not play audio:', filename));
                 
-                console.log('Authentication successful:', discordUser);
-                isAuthenticated = true;
+                return audio;
+            }
+
+            playBackgroundMusic() {
+                if (!this.musicEnabled || !this.backgroundMusic) return;
                 
-                // Update UI
-                document.getElementById('authPrompt').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'block';
-                document.getElementById('userDisplay').textContent = discordUser.username;
-                
-                return true;
-                
-            } catch (error) {
-                console.error('Discord authentication failed:', error);
-                alert('Failed to connect Discord account. You can still play but daily limits will be per-browser.');
-                
-                // Create fallback user for this session
-                createFallbackUser();
-                return false;
+                this.musicWasPlaying = true;
+                this.backgroundMusic.currentTime = 0;
+                this.backgroundMusic.play().catch(e => console.log('Could not play background music'));
+            }
+
+            stopBackgroundMusic() {
+                if (this.backgroundMusic) {
+                    this.musicWasPlaying = false;
+                    this.backgroundMusic.pause();
+                    this.backgroundMusic.currentTime = 0;
+                }
+            }
+
+            play(soundName) {
+                const filename = AUDIO_SETTINGS[soundName];
+                if (filename) {
+                    this.playAudio(filename);
+                }
             }
         }
 
-        // Create a fallback user for browsers that can't/won't authenticate
-        function createFallbackUser() {
-            let userId = sessionStorage.getItem('discord_activity_user');
-            if (!userId) {
-                userId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-                sessionStorage.setItem('discord_activity_user', userId);
+        // Initialize audio manager
+        const audioManager = new AudioManager();
+        // Initialize
+        document.getElementById('packImage').src = PACK_IMAGE;
+        // Apply protection to pack image
+        const packImg = document.getElementById('packImage');
+        window.setProtectedImage(packImg, PACK_IMAGE);
+        
+        // Storage key for daily lock
+        const STORAGE_KEY = 'hexapod_last_opened';
+        let currentCardIndex = 0;
+        let pulledCards = [];
+        let canClickCard = false;
+        
+        // Create background particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) { // Reduced from 30 for performance
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
             }
-            
-            discordUser = {
-                id: userId,
-                username: 'Guest User',
-                avatar: null
-            };
-            
-            isAuthenticated = false;
-            console.log('Created fallback user:', discordUser);
-            return discordUser;
         }
-
-        // Modified storage functions for per-user rate limiting
-        function getStorageKey() {
-            if (discordUser && discordUser.id) {
-                return `hexapod_last_opened_${discordUser.id}`;
-            }
-            return 'hexapod_last_opened_fallback';
-        }
-
+        
+        // Check if pack can be opened today
         function canOpenPack() {
-            const storageKey = getStorageKey();
-            const lastOpened = localStorage.getItem(storageKey);
+            const lastOpened = localStorage.getItem(STORAGE_KEY);
             if (!lastOpened) return true;
             
             const lastDate = new Date(lastOpened);
             const today = new Date();
             
+            // Set both dates to midnight for comparison
             const lastMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
             const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             
             return todayMidnight > lastMidnight;
         }
-
-        function savePackOpening() {
-            const storageKey = getStorageKey();
-            localStorage.setItem(storageKey, new Date().toISOString());
+        
+        // Get random card based on rarity
+        function getRandomCard() {
+            const rand = Math.random() * 100;
+            let rarity;
+            
+            if (rand < RARITY_CHANCES.legendary) {
+                rarity = 'legendary';
+            } else if (rand < RARITY_CHANCES.legendary + RARITY_CHANCES.uncommon) {
+                rarity = 'uncommon';
+            } else {
+                rarity = 'common';
+            }
+            
+            const cards = CARD_COLLECTION[rarity];
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            
+            return { ...card, rarity };
         }
+        
+        // Generate 5 random cards
+        function generatePack() {
+            pulledCards = [];
+            for (let i = 0; i < 5; i++) {
+                pulledCards.push(getRandomCard());
+            }
+        }
+        
+        // Create burst effect
+        function createBurst(x, y, color, intensity = 20) {
+            // discontinue
+        }
+        
+        // Create lightning effect for legendary
+        function createLightning() {
+            const lightning = document.getElementById('lightning');
+            lightning.innerHTML = '';
+            lightning.classList.add('active');
+            
+            for (let i = 0; i < 5; i++) {
+                const bolt = document.createElement('div');
+                bolt.className = 'lightning-bolt';
+                bolt.style.left = Math.random() * 100 + '%';
+                bolt.style.animationDelay = i * 0.1 + 's';
+                lightning.appendChild(bolt);
+            }
+            
+            setTimeout(() => {
+                lightning.classList.remove('active');
+            }, 1000);
+        }
+        
+        // Update title with card name
+        function updateTitle(card) {
+            const title = document.getElementById('title');
+            title.textContent = card.name;
+            title.className = 'title card-name ' + card.rarity;
+        }
+        
+        // Show card with animation
+        function showCard(index) {
+            const card = pulledCards[index];
+            const cardElement = document.getElementById('currentCard');
+            const cardImage = document.getElementById('cardImage');
+            
+            // Force animation reset by removing and re-adding the element
+            const newCard = cardElement.cloneNode(true);
+            cardElement.parentNode.replaceChild(newCard, cardElement);
+            
+            // Get the new reference
+            const currentCard = document.getElementById('currentCard');
+            const currentImage = document.getElementById('cardImage');
+            
+            // Reset card with proper animation
+            currentCard.className = 'card ' + card.rarity;
+            currentCard.classList.add('card-slam');
+            currentCard.classList.remove('flipped');
+            canClickCard = false;
+            
+            // Play card slam sound
+            audioManager.play('cardSlam');
+            
+            // Update title
+            updateTitle(card);
+            
+            // Set card image with protection
+            window.setProtectedImage(currentImage, card.image);
 
-        // Main initialization
-        function initializeApp() {
-            console.log('Starting app initialization...');
+            if (card.rarity === 'uncommon') {
+                // Play uncommon announcement sound
+                audioManager.play('uncommonAnoucement');
+            }
+            // Special effects for legendary
+            if (card.rarity === 'legendary') {
+                // Play legendary sound immediately when card appears
+                audioManager.play('legendaryAnoucement');
+                // Show legendary announcement
+                const announcement = document.getElementById('legendaryAnnouncement');
+                announcement.classList.add('show');
+                setTimeout(() => announcement.classList.remove('show'), 2000);
+                
+                // Screen shake
+                document.getElementById('mainContainer').classList.add('screen-shake');
+                setTimeout(() => {
+                    document.getElementById('mainContainer').classList.remove('screen-shake');
+                }, 500);
+                
+                // Lightning effect
+                createLightning();
+                
+            }
             
-            // Detect Discord context
-            isInDiscord = detectDiscordContext();
+            // Auto flip after animation
+            setTimeout(() => {
+                currentCard.classList.add('flipped');
+                canClickCard = true;
+                
+                // Play rarity-specific reveal sound
+                audioManager.play(card.rarity + 'Reveal');
+                
+                // Create burst effect based on rarity
+                const rect = currentCard.getBoundingClientRect();
+                const colors = {
+                    common: '#999',
+                    uncommon: '#0096ff',
+                    legendary: '#ffd700'
+                };
+                const intensity = card.rarity === 'legendary' ? 30 : 15;
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, colors[card.rarity], intensity);
+            }, card.rarity === 'legendary' ? 1200 : 600);
             
-            if (!isInDiscord) {
-                console.log('Showing Discord-only message');
-                document.getElementById('discordOnly').style.display = 'block';
-                document.getElementById('mainContainer').style.display = 'none';
+            // Re-attach click handler to the new element
+            currentCard.addEventListener('click', function() {
+                if (!canClickCard) return;
+                
+                currentCardIndex++;
+                
+                if (currentCardIndex < 5) {
+                    showCard(currentCardIndex);
+                } else {
+                    displayAllCards();
+                }
+            });
+        }
+        
+        // Display all cards
+        function displayAllCards() {
+            const container = document.getElementById('allCardsDisplay');
+            container.innerHTML = '';
+            
+            // Play all cards reveal sound
+            const legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
+            if (legendaryPulled) {
+                audioManager.play('allCardsReveal_withLegendary');
+            } else {
+                audioManager.play('allCardsReveal');
+            }
+            
+            // Reset title
+            document.getElementById('title').textContent = 'Your Collection!';
+            document.getElementById('title').className = 'title';
+            
+
+            pulledCards.forEach((card, i) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'small-card ' + card.rarity;
+                cardDiv.style.animationDelay = i * 0.1 + 's';
+                
+                const img = document.createElement('img');
+                window.setProtectedImage(img, card.image);
+                img.alt = card.name;
+                
+                const glow = document.createElement('div');
+                glow.className = 'rarity-glow';
+                glow.style.opacity = '1';
+                
+                cardDiv.appendChild(glow);
+                cardDiv.appendChild(img);
+                container.appendChild(cardDiv);
+
+                // Hover effect with burst
+                cardDiv.addEventListener('mouseenter', function(e) {
+                    if (card.rarity === 'legendary') {
+                        const rect = e.target.getBoundingClientRect();
+                        createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
+                    }
+                });
+            });
+            
+            
+
+            document.getElementById('cardDisplay').style.display = 'none';
+            container.style.display = 'flex';
+        }
+        
+        // Card click handler
+        document.getElementById('currentCard').addEventListener('click', function() {
+            if (!canClickCard) return;
+            
+            currentCardIndex++;
+            
+            if (currentCardIndex < 5) {
+                showCard(currentCardIndex);
+            } else {
+                displayAllCards();
+            }
+        });
+        
+        // Pack click handler - UPDATED for mobile optimization
+        document.getElementById('packContainer').addEventListener('click', function() {
+            if (!canOpenPack()) {
+                document.getElementById('lockedMessage').style.display = 'block';
                 return;
             }
+            const title = document.getElementById('title');
+            title.textContent = "";
             
-            console.log('In Discord Activity - showing game');
+            // Play pack opening sound
+            audioManager.play('packOpen');
             
-            // Start with fallback user (no authentication required)
-            createFallbackUser();
+            // Save opened date
+            localStorage.setItem(STORAGE_KEY, new Date().toISOString());
             
-            // Show the game
-            document.getElementById('discordOnly').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
+            // Generate pack
+            generatePack();
+            currentCardIndex = 0;
             
-            // Show auth prompt to encourage Discord connection
-            document.getElementById('authPrompt').style.display = 'block';
+            // Start mobile-optimized opening sequence
+            const pack = document.getElementById('pack');
+            pack.classList.add('opening');
             
-            // Set up Connect Discord button
-            document.getElementById('connectDiscord').addEventListener('click', async () => {
-                document.getElementById('connectDiscord').textContent = 'Connecting...';
-                document.getElementById('connectDiscord').disabled = true;
-                
-                await authenticateDiscord();
-                
-                document.getElementById('connectDiscord').textContent = 'Connect Discord';
-                document.getElementById('connectDiscord').disabled = false;
+            // Simplified energy rings for mobile
+            setTimeout(() => {
+                document.getElementById('energyRing1').classList.add('active');
+            }, 100);
+            setTimeout(() => {
+                document.getElementById('energyRing2').classList.add('active');
+            }, 200);
+            setTimeout(() => {
+                document.getElementById('energyRing3').classList.add('active');
+            }, 300);
+            
+            // Create burst effects leading to white flash
+            const rect = pack.getBoundingClientRect();
+            setTimeout(() => {
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 20);
+            }, 400);
+            
+            // // Trigger white flash explosion earlier
+            // setTimeout(() => {
+            //     document.getElementById('flashOverlay').classList.add('active');
+            // }, 600);
+            
+            // Show first card after shortened animation sequence
+            setTimeout(() => {
+                document.getElementById('packContainer').style.display = 'none';
+                document.getElementById('cardDisplay').style.display = 'block';
+                document.getElementById('flashOverlay').classList.remove('active');
+                showCard(0);
+            }, 1300);
+        });
+        
+        // Initialize particles on load
+        createParticles();
+        
+        // DEBUG MODE - Add URL parameter support
+        const urlParams = new URLSearchParams(window.location.search);
+        const debugMode = urlParams.get('debug') === 'true';
+        
+        // Debug controls
+        if (debugMode) {
+            console.log('🐛 DEBUG MODE ENABLED');
+            
+            // Add debug panel
+            const debugPanel = document.createElement('div');
+            debugPanel.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: #7cfc00;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 12px;
+                z-index: 10000;
+                border: 1px solid #7cfc00;
+            `;
+            debugPanel.innerHTML = `
+                <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
+                <div style="margin-bottom: 5px; font-size: 10px; color: #999;">Right-click & F12 enabled</div>
+                <button id="resetDaily" style="
+                    background: #7cfc00;
+                    color: #000;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Reset Daily Lock</button>
+                <button id="forceLegendary" style="
+                    background: #ffd700;
+                    color: #000;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Force Legendary</button>
+                <button id="instantOpen" style="
+                    background: #ff6b6b;
+                    color: #fff;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Skip Animations</button>
+                <div style="margin-top: 10px; font-size: 10px;">
+                    Press 'R' to reset<br>
+                    Press 'L' for legendary<br>
+                    Press 'Space' to open
+                </div>
+            `;
+            document.body.appendChild(debugPanel);
+            
+            // Reset button
+            document.getElementById('resetDaily').addEventListener('click', function() {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
             });
             
-            // Initialize the game
-            initializeGame();
-        }
-
-        // Initialize the original game code
-        function initializeGame() {
-            console.log('🎯 Initializing game...');
-            
-            // Protection code
-            (function() {
-                'use strict';
-                
-                const urlParams = new URLSearchParams(window.location.search);
-                const debugMode = urlParams.get('debug') === 'true';
-                
-                if (!debugMode) {
-                    document.addEventListener('contextmenu', function(e) {
-                        e.preventDefault();
-                        return false;
-                    });
-                    
-                    document.addEventListener('keydown', function(e) {
-                        if (e.keyCode === 123 || 
-                            (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
-                            (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
-                            e.preventDefault();
-                            return false;
-                        }
-                    });
-                }
-                
-                document.addEventListener('dragstart', function(e) {
-                    if (e.target.tagName === 'IMG') {
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-                
-                document.addEventListener('selectstart', function(e) {
-                    if (e.target.tagName === 'IMG') {
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-                
-                window.setProtectedImage = function(imgElement, src) {
-                    imgElement.src = src;
-                    imgElement.style.webkitUserSelect = 'none';
-                    imgElement.style.mozUserSelect = 'none';
-                    imgElement.style.msUserSelect = 'none';
-                    imgElement.style.userSelect = 'none';
-                    imgElement.draggable = false;
-                };
-            })();
-            
-            // Game constants (your original data)
-            const PACK_IMAGE = 'HexapodTCGPack.png';
-            
-            const CARD_COLLECTION = {
-                common: [
-                    { name: 'The Soldier Ant', image: 'bugs_card/ant.png' },
-                    { name: 'The House Spider', image: 'bugs_card/spider.png'},
-                    { name: 'The Bumble Bee', image: 'bugs_card/bee.png'},
-                    { name: 'The Pill Bug', image: 'bugs_card/pill.png'},
-                    { name: 'The Grass Hopper', image: 'bugs_card/cricket.png'},
-                ],
-                uncommon: [
-                    { name: 'The Tiger Beetle', image: 'bugs_card/tiger.png' },
-                    { name: 'The Black Beetle', image: 'bugs_card/blackbeetle.png' },
-                    { name: 'The Diving Bell Spider', image: 'bugs_card/divingbell.png' },
-                    { name: 'The Dung Beetle', image: 'bugs_card/dungbeetle.png' },
-                    { name: 'The Mole Cricket', image: 'bugs_card/mole.png' },
-                    { name: 'The Wasp', image: 'bugs_card/wasp.png' },
-                ],
-                legendary: [
-                    { name: 'The Praying Mantis', image: 'bugs_card/mantis.png' },
-                    { name: 'The Dragon Fly', image: 'bugs_card/dragon.png' },
-                    { name: 'The Rhino Beetle', image: 'bugs_card/rihno.png' },
-                ]
-            };
-
-            const RARITY_CHANCES = {
-                common: 75,
-                uncommon: 23,
-                legendary: 2
-            };
-
-            const AUDIO_SETTINGS = {
-                backgroundMusic: 'sfx/backtrack.mp3',
-                packOpen: 'sfx/tcg pack open.mp3',
-                cardSlam: 'sfx/Card Deal 2.wav',
-                commonReveal: 'sfx/card_deal.mp3',
-                uncommonReveal: 'sfx/card_deal.mp3',
-                legendaryReveal: 'sfx/card_deal.mp3',
-                legendaryAnoucement: 'sfx/legendary annoucement.mp3',
-                uncommonAnoucement: 'sfx/uncommon.mp3',
-                allCardsReveal: 'sfx/cardflips.mp3',
-                allCardsReveal_withLegendary: ''
-            };
-
-            // Audio Manager
-            class AudioManager {
-                constructor() {
-                    this.musicEnabled = true;
-                    this.sfxEnabled = true;
-                    this.volume = 0.5;
-                    this.backgroundMusic = null;
-                    this.musicWasPlaying = false;
-                    this.initAudio();
-                    this.setupVisibilityHandling();
-                }
-
-                initAudio() {
-                    if (AUDIO_SETTINGS.backgroundMusic) {
-                        this.backgroundMusic = new Audio(AUDIO_SETTINGS.backgroundMusic);
-                        this.backgroundMusic.loop = true;
-                        this.backgroundMusic.volume = this.volume * 0.3;
-                    }
-                    
-                    document.addEventListener('click', () => {
-                        if (this.musicEnabled) {
-                            this.playBackgroundMusic();
-                        }
-                    }, { once: true });
-                }
-
-                setupVisibilityHandling() {
-                    document.addEventListener('visibilitychange', () => {
-                        if (document.hidden) {
-                            if (this.backgroundMusic && !this.backgroundMusic.paused) {
-                                this.musicWasPlaying = true;
-                                this.backgroundMusic.pause();
-                            }
-                        } else {
-                            if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
-                                this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
-                            }
-                        }
-                    });
-
-                    window.addEventListener('blur', () => {
-                        if (this.backgroundMusic && !this.backgroundMusic.paused) {
-                            this.musicWasPlaying = true;
-                            this.backgroundMusic.pause();
-                        }
-                    });
-
-                    window.addEventListener('focus', () => {
-                        if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
-                            this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
-                        }
-                    });
-                }
-
-                playAudio(filename, volume = 1.0) {
-                    if (!this.sfxEnabled || !filename) return;
-                    
-                    const audio = new Audio(filename);
-                    audio.volume = this.volume * volume;
-                    audio.play().catch(e => console.log('Could not play audio:', filename));
-                    
-                    return audio;
-                }
-
-                playBackgroundMusic() {
-                    if (!this.musicEnabled || !this.backgroundMusic) return;
-                    
-                    this.musicWasPlaying = true;
-                    this.backgroundMusic.currentTime = 0;
-                    this.backgroundMusic.play().catch(e => console.log('Could not play background music'));
-                }
-
-                stopBackgroundMusic() {
-                    if (this.backgroundMusic) {
-                        this.musicWasPlaying = false;
-                        this.backgroundMusic.pause();
-                        this.backgroundMusic.currentTime = 0;
-                    }
-                }
-
-                play(soundName) {
-                    const filename = AUDIO_SETTINGS[soundName];
-                    if (filename) {
-                        this.playAudio(filename);
-                    }
-                }
-            }
-
-            const audioManager = new AudioManager();
-            
-            // Initialize pack image
-            document.getElementById('packImage').src = PACK_IMAGE;
-            const packImg = document.getElementById('packImage');
-            window.setProtectedImage(packImg, PACK_IMAGE);
-            
-            let currentCardIndex = 0;
-            let pulledCards = [];
-            let canClickCard = false;
-            
-            function createParticles() {
-                const container = document.getElementById('particles');
-                for (let i = 0; i < 20; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.left = Math.random() * 100 + '%';
-                    particle.style.animationDelay = Math.random() * 15 + 's';
-                    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-                    container.appendChild(particle);
-                }
-            }
-            
-            function getRandomCard() {
-                const rand = Math.random() * 100;
-                let rarity;
-                
-                if (rand < RARITY_CHANCES.legendary) {
-                    rarity = 'legendary';
-                } else if (rand < RARITY_CHANCES.legendary + RARITY_CHANCES.uncommon) {
-                    rarity = 'uncommon';
-                } else {
-                    rarity = 'common';
-                }
-                
-                const cards = CARD_COLLECTION[rarity];
-                const card = cards[Math.floor(Math.random() * cards.length)];
-                
-                return { ...card, rarity };
-            }
-            
-            function generatePack() {
-                pulledCards = [];
-                for (let i = 0; i < 5; i++) {
-                    pulledCards.push(getRandomCard());
-                }
-            }
-            
-            function createBurst(x, y, color, intensity = 20) {
-                // Placeholder for burst effects
-            }
-            
-            function createLightning() {
-                const lightning = document.getElementById('lightning');
-                lightning.innerHTML = '';
-                lightning.classList.add('active');
-                
-                for (let i = 0; i < 5; i++) {
-                    const bolt = document.createElement('div');
-                    bolt.className = 'lightning-bolt';
-                    bolt.style.left = Math.random() * 100 + '%';
-                    bolt.style.animationDelay = i * 0.1 + 's';
-                    lightning.appendChild(bolt);
-                }
-                
-                setTimeout(() => {
-                    lightning.classList.remove('active');
-                }, 1000);
-            }
-            
-            function updateTitle(card) {
-                const title = document.getElementById('title');
-                title.textContent = card.name;
-                title.className = 'title card-name ' + card.rarity;
-            }
-            
-            function showCard(index) {
-                const card = pulledCards[index];
-                const cardElement = document.getElementById('currentCard');
-                
-                const newCard = cardElement.cloneNode(true);
-                cardElement.parentNode.replaceChild(newCard, cardElement);
-                
-                const currentCard = document.getElementById('currentCard');
-                const currentImage = document.getElementById('cardImage');
-                
-                currentCard.className = 'card ' + card.rarity;
-                currentCard.classList.add('card-slam');
-                currentCard.classList.remove('flipped');
-                canClickCard = false;
-                
-                audioManager.play('cardSlam');
-                updateTitle(card);
-                window.setProtectedImage(currentImage, card.image);
-
-                if (card.rarity === 'uncommon') {
-                    audioManager.play('uncommonAnoucement');
-                }
-                
-                if (card.rarity === 'legendary') {
-                    audioManager.play('legendaryAnoucement');
-                    const announcement = document.getElementById('legendaryAnnouncement');
-                    announcement.classList.add('show');
-                    setTimeout(() => announcement.classList.remove('show'), 2000);
-                    
-                    document.getElementById('mainContainer').classList.add('screen-shake');
-                    setTimeout(() => {
-                        document.getElementById('mainContainer').classList.remove('screen-shake');
-                    }, 500);
-                    
-                    createLightning();
-                }
-                
-                setTimeout(() => {
-                    currentCard.classList.add('flipped');
-                    canClickCard = true;
-                    audioManager.play(card.rarity + 'Reveal');
-                    const rect = currentCard.getBoundingClientRect();
-                    const colors = {
-                        common: '#999',
-                        uncommon: '#0096ff',
-                        legendary: '#ffd700'
-                    };
-                    const intensity = card.rarity === 'legendary' ? 30 : 15;
-                    createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, colors[card.rarity], intensity);
-                }, card.rarity === 'legendary' ? 1200 : 600);
-                
-                currentCard.addEventListener('click', function() {
-                    if (!canClickCard) return;
-                    
-                    currentCardIndex++;
-                    
-                    if (currentCardIndex < 5) {
-                        showCard(currentCardIndex);
-                    } else {
-                        displayAllCards();
-                    }
-                });
-            }
-            
-            function displayAllCards() {
-                const container = document.getElementById('allCardsDisplay');
-                container.innerHTML = '';
-                
-                const legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
-                if (legendaryPulled) {
-                    audioManager.play('allCardsReveal_withLegendary');
-                } else {
-                    audioManager.play('allCardsReveal');
-                }
-                
-                document.getElementById('title').textContent = 'Your Collection!';
-                document.getElementById('title').className = 'title';
-
-                pulledCards.forEach((card, i) => {
-                    const cardDiv = document.createElement('div');
-                    cardDiv.className = 'small-card ' + card.rarity;
-                    cardDiv.style.animationDelay = i * 0.1 + 's';
-                    
-                    const img = document.createElement('img');
-                    window.setProtectedImage(img, card.image);
-                    img.alt = card.name;
-                    
-                    const glow = document.createElement('div');
-                    glow.className = 'rarity-glow';
-                    glow.style.opacity = '1';
-                    
-                    cardDiv.appendChild(glow);
-                    cardDiv.appendChild(img);
-                    container.appendChild(cardDiv);
-
-                    cardDiv.addEventListener('mouseenter', function(e) {
-                        if (card.rarity === 'legendary') {
-                            const rect = e.target.getBoundingClientRect();
-                            createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
-                        }
-                    });
-                });
-
-                document.getElementById('cardDisplay').style.display = 'none';
-                container.style.display = 'flex';
-            }
-            
-            // Pack click handler with Discord user-specific rate limiting
-            document.getElementById('packContainer').addEventListener('click', function() {
-                if (!canOpenPack()) {
-                    document.getElementById('lockedMessage').style.display = 'block';
-                    return;
-                }
-                const title = document.getElementById('title');
-                title.textContent = "";
-                
-                audioManager.play('packOpen');
-                
-                savePackOpening(); // Now uses Discord user ID
-                
-                generatePack();
-                currentCardIndex = 0;
-                
-                const pack = document.getElementById('pack');
-                pack.classList.add('opening');
-                
-                setTimeout(() => {
-                    document.getElementById('energyRing1').classList.add('active');
-                }, 100);
-                setTimeout(() => {
-                    document.getElementById('energyRing2').classList.add('active');
-                }, 200);
-                setTimeout(() => {
-                    document.getElementById('energyRing3').classList.add('active');
-                }, 300);
-                
-                const rect = pack.getBoundingClientRect();
-                setTimeout(() => {
-                    createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 20);
-                }, 400);
-                
-                setTimeout(() => {
-                    document.getElementById('packContainer').style.display = 'none';
-                    document.getElementById('cardDisplay').style.display = 'block';
-                    document.getElementById('flashOverlay').classList.remove('active');
-                    showCard(0);
-                }, 1300);
+            // Force legendary button
+            let forceLegendaryMode = false;
+            document.getElementById('forceLegendary').addEventListener('click', function() {
+                forceLegendaryMode = !forceLegendaryMode;
+                this.style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                this.textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                console.log('Force Legendary:', forceLegendaryMode);
             });
             
-            createParticles();
+            // Instant open button
+            let skipAnimations = false;
+            document.getElementById('instantOpen').addEventListener('click', function() {
+                skipAnimations = !skipAnimations;
+                this.style.background = skipAnimations ? '#00ff00' : '#ff6b6b';
+                this.textContent = skipAnimations ? 'Instant ON' : 'Skip Animations';
+                console.log('Skip Animations:', skipAnimations);
+            });
             
-            // Check if pack is locked on load
-            const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
-            if (!debugMode && !canOpenPack()) {
-                document.getElementById('packContainer').style.opacity = '0.5';
-                document.getElementById('packContainer').style.pointerEvents = 'none';
-                document.getElementById('lockedMessage').style.display = 'block';
-                document.getElementById('title').textContent = 'Daily Pack Already Opened!';
+            // Override canOpenPack in debug mode
+            window.canOpenPack = function() {
+                return true; // Always allow opening in debug mode
+            };
+            
+            // Override getRandomCard for forced legendary
+            const originalGetRandomCard = getRandomCard;
+            window.getRandomCard = function() {
+                if (forceLegendaryMode) {
+                    const cards = CARD_COLLECTION.legendary;
+                    const card = cards[Math.floor(Math.random() * cards.length)];
+                    return { ...card, rarity: 'legendary' };
+                }
+                return originalGetRandomCard();
+            };
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
+                }
+                if (e.key === 'l' || e.key === 'L') {
+                    forceLegendaryMode = !forceLegendaryMode;
+                    document.getElementById('forceLegendary').style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                    document.getElementById('forceLegendary').textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                }
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('packContainer').click();
+                }
+            });
+            
+            // Speed up animations if instant mode
+            if (skipAnimations) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        animation-duration: 0.1s !important;
+                        transition-duration: 0.1s !important;
+                    }
+                `;
+                document.head.appendChild(style);
             }
-            
-            console.log('✅ Game initialization complete!');
         }
-
-        // Debug helper for manual testing
-        window.forceDiscordMode = function() {
-            console.log('🔧 FORCING DISCORD MODE');
-            isInDiscord = true;
-            initializeApp();
-        };
-
-        window.forceNormalMode = function() {
-            console.log('🔧 FORCING NORMAL MODE');
-            isInDiscord = false;
-            initializeApp();
-        };
-
-        // Start the app
-        console.log('🎬 App starting...');
-        initializeApp();
+        
+        // Check if pack is locked on load (skip in debug mode)
+        if (!debugMode && !canOpenPack()) {
+            document.getElementById('packContainer').style.opacity = '0.5';
+            document.getElementById('packContainer').style.pointerEvents = 'none';
+            document.getElementById('lockedMessage').style.display = 'block';
+            document.getElementById('title').textContent = 'Daily Pack Already Opened!';
+        }
     </script>
 </body>
 </html>
