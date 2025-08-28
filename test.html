@@ -33,64 +33,6 @@
             user-drag: none;
         }
 
-        /* Audio Controls */
-        .audio-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .audio-button {
-            background: rgba(124, 252, 0, 0.2);
-            border: 2px solid #7cfc00;
-            color: #7cfc00;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .audio-button:hover {
-            background: rgba(124, 252, 0, 0.4);
-            box-shadow: 0 0 15px rgba(124, 252, 0, 0.5);
-        }
-
-        .audio-button.active {
-            background: #7cfc00;
-            color: #000;
-        }
-
-        .volume-control {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .volume-slider {
-            width: 60px;
-            height: 4px;
-            background: rgba(124, 252, 0, 0.3);
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .volume-slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            background: #7cfc00;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
         /* Animated background particles */
         .particles {
             position: fixed;
@@ -181,7 +123,7 @@
             color: #7cfc00;
             font-size: 28px;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-shadow: 0 0 20px rgba(124, 252, 0, 0.5),
                          0 0 40px rgba(124, 252, 0, 0.3);
             animation: pulse 2s ease-in-out infinite;
@@ -246,19 +188,13 @@
             filter: brightness(1.2) drop-shadow(0 0 30px rgba(252, 214, 0, 0.5));
         }
 
-        .pack-image {
+        /* 3D Canvas for GLB model */
+        .pack-3d-canvas {
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
-            /* Disable image interactions */
+            border-radius: 15px;
+            /* Disable canvas interactions */
             pointer-events: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-            -webkit-user-drag: none;
-            -moz-user-drag: none;
-            user-drag: none;
         }
 
         /* Mobile-optimized pack opening animation */
@@ -347,11 +283,6 @@
                         0 0 80px rgba(255, 255, 255, 0.6);
         }
 
-        .card.flipped:hover {
-            transform: rotateY(190deg) rotateX(-10deg) scale(1.05);
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
-                        0 0 80px rgba(255, 255, 255, 0.6);
-        }
 
         .card-back {
             width: 100%;
@@ -722,40 +653,69 @@
                 letter-spacing: 2px;
             }
         }
+
+        /* Loading indicator for 3D model */
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #7cfc00;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(124, 252, 0, 0.3);
+            border-top: 3px solid #7cfc00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <!-- Audio Controls -->
-    <div class="audio-controls">
-        <button class="audio-button active" id="musicToggle">🎵 Music</button>
-        <button class="audio-button active" id="sfxToggle">🔊 SFX</button>
-        <div class="volume-control">
-            <span style="color: #7cfc00; font-size: 12px;">🔊</span>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
-        </div>
-    </div>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-        // Image protection measures
+        // Image protection measures (disabled in debug mode)
         (function() {
             'use strict';
             
-            // Disable right-click context menu
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
+            const urlParams = new URLSearchParams(window.location.search);
+            const debugMode = urlParams.get('debug') === 'true';
             
-            // Disable common keyboard shortcuts for dev tools and saving
-            document.addEventListener('keydown', function(e) {
-                // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
-                if (e.keyCode === 123 || 
-                    (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
-                    (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+            if (!debugMode) {
+                // Disable right-click context menu
+                document.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
                     return false;
-                }
-            });
+                });
+                
+                // Disable common keyboard shortcuts for dev tools and saving
+                document.addEventListener('keydown', function(e) {
+                    // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+S, Ctrl+A, Ctrl+P
+                    if (e.keyCode === 123 || 
+                        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
+                        (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83 || e.keyCode === 65 || e.keyCode === 80))) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
             
             // Disable drag and drop on all images
             document.addEventListener('dragstart', function(e) {
@@ -773,35 +733,8 @@
                 }
             });
             
-            // Obfuscate image sources
-            function obfuscateImageSrc(img, src) {
-                // Create a canvas to draw the image
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const tempImg = new Image();
-                
-                tempImg.onload = function() {
-                    canvas.width = tempImg.width;
-                    canvas.height = tempImg.height;
-                    ctx.drawImage(tempImg, 0, 0);
-                    
-                    // Convert to blob URL instead of direct file path
-                    canvas.toBlob(function(blob) {
-                        const url = URL.createObjectURL(blob);
-                        img.src = url;
-                        
-                        // Clean up the blob URL after a delay
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    });
-                };
-                
-                tempImg.src = src;
-            }
-            
             // Override the normal image loading for card images
             window.setProtectedImage = function(imgElement, src) {
-                // For now, just set normally but with additional protections
-                // In production, you might want to implement server-side image streaming
                 imgElement.src = src;
                 
                 // Add additional layer - make images unselectable
@@ -815,7 +748,7 @@
         })();
         
         // REPLACE THESE WITH YOUR OWN ASSETS
-        const PACK_IMAGE = 'HexapodTCGPack.png';
+        const PACK_GLB_MODEL = 'HexapodTCGPack.glb'; // Replace with your GLB file path
         
         // Card collection with rarity and image URLs
         const CARD_COLLECTION = {
@@ -843,27 +776,26 @@
 
         // Rarity chances (must add up to 100)
         const RARITY_CHANCES = {
-            common: 73.8,     // ~74% chance
-            uncommon: 23.2,   // ~23% chance
-            legendary: 3      // 3% chance
+            common: 75,     // ~74% chance
+            uncommon: 23,   // ~23% chance
+            legendary: 2      // 3% chance
         };
 
         // Audio settings
         const AUDIO_SETTINGS = {
             // Replace these URLs with your own audio files
-            backgroundMusic: 'balatro/introPad1.ogg',
-            packOpen: 'balatro/explosion1.ogg', // Placeholder
-            cardSlam: 'balatro/card1.ogg', // Placeholder
-            commonReveal: 'balatro/card3.ogg', // Placeholder
-            uncommonReveal: 'balatro/card3.ogg', // Placeholder
-            legendaryReveal: 'balatro/card3.ogg', // Placeholder
-            legendaryAnoucement: 'balatro/polychrome1.ogg', // Placeholder.  balatro/holo1.ogg
-            uncommonAnoucement: 'balatro/holo1.ogg',
-            allCardsReveal: 'balatro/cardFan2.ogg', // Placeholder
-            allCardsReveal_withLegendary: 'balatro/win.ogg' // Placeholder
+            backgroundMusic: 'sfx/backtrack.mp3',
+            packOpen: 'sfx/tcg pack open.mp3', // Placeholder
+            cardSlam: 'sfx/Card Deal 2.wav', // Placeholder
+            commonReveal: 'sfx/card_deal.mp3', // Placeholder
+            uncommonReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryAnoucement: 'sfx/legendary annoucement.mp3', // Placeholder.  balatro/holo1.ogg
+            uncommonAnoucement: 'sfx/uncommon.mp3',
+            allCardsReveal: 'sfx/cardflips.mp3', // Placeholder
+            allCardsReveal_withLegendary: '' // Placeholder
         };
     </script>
-    <!-- ===== END CUSTOMIZABLE SECTION ===== -->
 
     <div class="particles" id="particles"></div>
     <div class="flash-overlay" id="flashOverlay"></div>
@@ -875,7 +807,11 @@
         
         <div class="pack-container" id="packContainer">
             <div class="pack" id="pack">
-                <img src="" id="packImage" class="pack-image" alt="Card Pack">
+                <canvas class="pack-3d-canvas" id="pack3DCanvas"></canvas>
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    Loading 3D Model...
+                </div>
             </div>
             <div class="energy-ring" id="energyRing1"></div>
             <div class="energy-ring" id="energyRing2"></div>
@@ -898,584 +834,239 @@
     </div>
 
     <script>
-        // Audio Management System
-        // Simple Audio System
-        class AudioManager {
-            constructor() {
-                this.musicEnabled = false;
-                this.sfxEnabled = true;
-                this.volume = 0.3;
-                this.backgroundMusic = null;
-                this.initAudio();
-                this.setupControls();
-            }
-
-            initAudio() {
-                // Background music
-                if (AUDIO_SETTINGS.backgroundMusic) {
-                    this.backgroundMusic = new Audio(AUDIO_SETTINGS.backgroundMusic);
-                    this.backgroundMusic.loop = true;
-                    this.backgroundMusic.volume = this.volume * 0.3;
-                }
-            }
-
-            playAudio(filename, volume = 1.0) {
-                if (!this.sfxEnabled || !filename) return;
+        // 3D Model Manager
+        class Pack3DViewer {
+            constructor(canvasId, modelUrl) {
+                this.canvas = document.getElementById(canvasId);
+                this.modelUrl = modelUrl;
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.model = null;
+                this.isLoaded = false;
+                this.animationId = null;
+                this.clock = new THREE.Clock();
                 
-                // Create new audio instance for stacking
-                const audio = new Audio(filename);
-                audio.volume = this.volume * volume;
-                audio.play().catch(e => console.log('Could not play audio:', filename));
+                this.init();
+                this.loadModel();
+            }
+
+            init() {
+                // Scene setup
+                this.scene = new THREE.Scene();
                 
-                return audio;
-            }
-
-            playBackgroundMusic() {
-                if (!this.musicEnabled || !this.backgroundMusic) return;
+                // Camera setup
+                this.camera = new THREE.PerspectiveCamera(
+                    50, 
+                    this.canvas.offsetWidth / this.canvas.offsetHeight, 
+                    0.1, 
+                    1000
+                );
+                this.camera.position.set(0, 0, 5);
                 
-                this.backgroundMusic.currentTime = 0;
-                this.backgroundMusic.play().catch(e => console.log('Could not play background music'));
-            }
-
-            stopBackgroundMusic() {
-                if (this.backgroundMusic) {
-                    this.backgroundMusic.pause();
-                    this.backgroundMusic.currentTime = 0;
-                }
-            }
-
-            play(soundName) {
-                const filename = AUDIO_SETTINGS[soundName];
-                if (filename) {
-                    this.playAudio(filename);
-                }
-            }
-
-            setVolume(volume) {
-                this.volume = volume / 100;
-                if (this.backgroundMusic) {
-                    this.backgroundMusic.volume = this.volume * 0.3;
-                }
-            }
-
-            toggleMusic() {
-                this.musicEnabled = !this.musicEnabled;
-                if (this.musicEnabled) {
-                    this.playBackgroundMusic();
-                } else {
-                    this.stopBackgroundMusic();
-                }
-                return this.musicEnabled;
-            }
-
-            toggleSFX() {
-                this.sfxEnabled = !this.sfxEnabled;
-                return this.sfxEnabled;
-            }
-
-            setupControls() {
-                const musicToggle = document.getElementById('musicToggle');
-                const sfxToggle = document.getElementById('sfxToggle');
-                const volumeSlider = document.getElementById('volumeSlider');
-
-                musicToggle.addEventListener('click', () => {
-                    const enabled = this.toggleMusic();
-                    musicToggle.classList.toggle('active', enabled);
-                    musicToggle.textContent = enabled ? '🎵 Music ON' : '🎵 Music OFF';
+                // Renderer setup
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: this.canvas, 
+                    alpha: true, 
+                    antialias: true 
                 });
+                this.renderer.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1;
+                
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 0.5);
+                this.scene.add(directionalLight);
+                
+                const pointLight = new THREE.PointLight(0x7cfc00, 0.5, 10);
+                pointLight.position.set(0, 2, 2);
+                this.scene.add(pointLight);
+                
+                // Handle window resize
+                window.addEventListener('resize', () => this.handleResize());
+            }
 
-                sfxToggle.addEventListener('click', () => {
-                    const enabled = this.toggleSFX();
-                    sfxToggle.classList.toggle('active', enabled);
-                    sfxToggle.textContent = enabled ? '🔊 SFX ON' : '🔊 SFX OFF';
-                });
-
-                volumeSlider.addEventListener('input', (e) => {
-                    this.setVolume(e.target.value);
-                });
-
-                // Start background music on first user interaction
-                document.addEventListener('click', () => {
-                    if (this.musicEnabled) {
-                        this.playBackgroundMusic();
+            loadModel() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                loadingIndicator.classList.add('show');
+                
+                // Check if GLTFLoader is available
+                if (typeof THREE.GLTFLoader === 'undefined') {
+                    console.error('GLTFLoader not found. Trying alternative approach...');
+                    // Try using the global GLTFLoader if available
+                    if (typeof GLTFLoader !== 'undefined') {
+                        const loader = new GLTFLoader();
+                        this.loadWithLoader(loader, loadingIndicator);
+                    } else {
+                        this.handleLoadError('GLTFLoader not available', loadingIndicator);
                     }
-                }, { once: true });
-            }
-        }
-
-        // Initialize audio manager
-        const audioManager = new AudioManager();
-
-        // Initialize
-        document.getElementById('packImage').src = PACK_IMAGE;
-        // Apply protection to pack image
-        const packImg = document.getElementById('packImage');
-        window.setProtectedImage(packImg, PACK_IMAGE);
-        
-        // Storage key for daily lock
-        const STORAGE_KEY = 'hexapod_last_opened';
-        let currentCardIndex = 0;
-        let pulledCards = [];
-        let canClickCard = false;
-        
-        // Create background particles
-        function createParticles() {
-            const container = document.getElementById('particles');
-            for (let i = 0; i < 20; i++) { // Reduced from 30 for performance
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-                container.appendChild(particle);
-            }
-        }
-        
-        // Check if pack can be opened today
-        function canOpenPack() {
-            const lastOpened = localStorage.getItem(STORAGE_KEY);
-            if (!lastOpened) return true;
-            
-            const lastDate = new Date(lastOpened);
-            const today = new Date();
-            
-            // Set both dates to midnight for comparison
-            const lastMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
-            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            
-            return todayMidnight > lastMidnight;
-        }
-        
-        // Get random card based on rarity
-        function getRandomCard() {
-            const rand = Math.random() * 100;
-            let rarity;
-            
-            if (rand < RARITY_CHANCES.legendary) {
-                rarity = 'legendary';
-            } else if (rand < RARITY_CHANCES.legendary + RARITY_CHANCES.uncommon) {
-                rarity = 'uncommon';
-            } else {
-                rarity = 'common';
-            }
-            
-            const cards = CARD_COLLECTION[rarity];
-            const card = cards[Math.floor(Math.random() * cards.length)];
-            
-            return { ...card, rarity };
-        }
-        
-        // Generate 5 random cards
-        function generatePack() {
-            pulledCards = [];
-            for (let i = 0; i < 5; i++) {
-                pulledCards.push(getRandomCard());
-            }
-        }
-        
-        // Create burst effect
-        function createBurst(x, y, color, intensity = 20) {
-            const burst = document.createElement('div');
-            burst.className = 'burst-particles';
-            burst.style.left = x + 'px';
-            burst.style.top = y + 'px';
-            document.body.appendChild(burst);
-            
-            for (let i = 0; i < Math.min(intensity, 30); i++) { // Cap particles for performance
-                const particle = document.createElement('div');
-                particle.className = 'burst-particle';
-                particle.style.background = color;
-                particle.style.setProperty('--tx', (Math.random() - 0.5) * 300 + 'px');
-                particle.style.setProperty('--ty', (Math.random() - 0.5) * 300 + 'px');
-                burst.appendChild(particle);
-            }
-            
-            setTimeout(() => burst.remove(), 1000);
-        }
-        
-        // Create lightning effect for legendary
-        function createLightning() {
-            const lightning = document.getElementById('lightning');
-            lightning.innerHTML = '';
-            lightning.classList.add('active');
-            
-            for (let i = 0; i < 5; i++) {
-                const bolt = document.createElement('div');
-                bolt.className = 'lightning-bolt';
-                bolt.style.left = Math.random() * 100 + '%';
-                bolt.style.animationDelay = i * 0.1 + 's';
-                lightning.appendChild(bolt);
-            }
-            
-            setTimeout(() => {
-                lightning.classList.remove('active');
-            }, 1000);
-        }
-        
-        // Update title with card name
-        function updateTitle(card) {
-            const title = document.getElementById('title');
-            title.textContent = card.name;
-            title.className = 'title card-name ' + card.rarity;
-        }
-        
-        // Show card with animation
-        function showCard(index) {
-            const card = pulledCards[index];
-            const cardElement = document.getElementById('currentCard');
-            const cardImage = document.getElementById('cardImage');
-            
-            // Force animation reset by removing and re-adding the element
-            const newCard = cardElement.cloneNode(true);
-            cardElement.parentNode.replaceChild(newCard, cardElement);
-            
-            // Get the new reference
-            const currentCard = document.getElementById('currentCard');
-            const currentImage = document.getElementById('cardImage');
-            
-            // Reset card with proper animation
-            currentCard.className = 'card ' + card.rarity;
-            currentCard.classList.add('card-slam');
-            currentCard.classList.remove('flipped');
-            canClickCard = false;
-            
-            // Play card slam sound
-            audioManager.play('cardSlam');
-            
-            // Update title
-            updateTitle(card);
-            
-            // Set card image with protection
-            window.setProtectedImage(currentImage, card.image);
-
-            if (card.rarity === 'uncommon') {
-                // Play uncommon announcement sound
-                audioManager.play('uncommonAnoucement');
-            }
-            // Special effects for legendary
-            if (card.rarity === 'legendary') {
-                // Play legendary sound immediately when card appears
-                audioManager.play('legendaryAnoucement');
-                // Show legendary announcement
-                const announcement = document.getElementById('legendaryAnnouncement');
-                announcement.classList.add('show');
-                setTimeout(() => announcement.classList.remove('show'), 2000);
+                    return;
+                }
                 
-                // Screen shake
-                document.getElementById('mainContainer').classList.add('screen-shake');
-                setTimeout(() => {
-                    document.getElementById('mainContainer').classList.remove('screen-shake');
-                }, 500);
+                const loader = new THREE.GLTFLoader();
+                this.loadWithLoader(loader, loadingIndicator);
+            }
+
+            loadWithLoader(loader, loadingIndicator) {
+                console.log('Attempting to load 3D model:', this.modelUrl);
                 
-                // Lightning effect
-                createLightning();
-                
-                // Extra burst particles
-                setTimeout(() => {
-                    const rect = currentCard.getBoundingClientRect();
-                    for (let i = 0; i < 3; i++) {
-                        setTimeout(() => {
-                            createBurst(
-                                rect.left + rect.width / 2 + (Math.random() - 0.5) * 100,
-                                rect.top + rect.height / 2 + (Math.random() - 0.5) * 100,
-                                '#ffffff',
-                                25
-                            );
-                        }, i * 200);
+                loader.load(
+                    this.modelUrl,
+                    (gltf) => {
+                        console.log('3D model loaded successfully:', gltf);
+                        this.model = gltf.scene;
+                        
+                        // Center and scale the model
+                        const box = new THREE.Box3().setFromObject(this.model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+                        
+                        console.log('Model size:', size);
+                        console.log('Model center:', center);
+                        
+                        // Scale to fit in view
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = maxDim > 0 ? 2 / maxDim : 1;
+                        this.model.scale.setScalar(scale);
+                        
+                        // Center the model
+                        this.model.position.sub(center.multiplyScalar(scale));
+                        
+                        // Ensure the model is visible
+                        this.model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                // Make sure materials are visible
+                                if (child.material) {
+                                    child.material.transparent = false;
+                                    child.material.opacity = 1;
+                                }
+                            }
+                        });
+                        
+                        this.scene.add(this.model);
+                        this.isLoaded = true;
+                        
+                        loadingIndicator.classList.remove('show');
+                        console.log('3D model added to scene and animation started');
+                        this.animate();
+                    },
+                    (progress) => {
+                        // Loading progress
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        console.log('Loading progress:', percent + '%');
+                        loadingIndicator.innerHTML = `<div class="spinner"></div>Loading 3D Model... ${percent}%`;
+                    },
+                    (error) => {
+                        this.handleLoadError(error, loadingIndicator);
                     }
-                }, 400);
+                );
             }
-            
-            // Auto flip after animation
-            setTimeout(() => {
-                currentCard.classList.add('flipped');
-                canClickCard = true;
+
+            handleLoadError(error, loadingIndicator) {
+                console.error('Error loading 3D model:', error);
+                console.log('Model URL attempted:', this.modelUrl);
                 
-                // Play rarity-specific reveal sound
-                audioManager.play(card.rarity + 'Reveal');
+                // Create a fallback cube so we can see something is working
+                const geometry = new THREE.BoxGeometry(1, 1.5, 0.1);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0x7cfc00,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                this.model = new THREE.Mesh(geometry, material);
+                this.scene.add(this.model);
+                this.isLoaded = true;
                 
-                // Create burst effect based on rarity
-                const rect = currentCard.getBoundingClientRect();
-                const colors = {
-                    common: '#999',
-                    uncommon: '#0096ff',
-                    legendary: '#ffd700'
+                loadingIndicator.innerHTML = '<div style="color: #ff4444; font-size: 12px;">3D model failed to load<br>Using fallback cube<br>Check console for details</div>';
+                
+                setTimeout(() => {
+                    loadingIndicator.classList.remove('show');
+                    this.animate();
+                }, 3000);
+            }
+
+            animate() {
+                if (!this.isLoaded) return;
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+                
+                const elapsedTime = this.clock.getElapsedTime();
+                
+                if (this.model) {
+                    // Gentle rotation and floating animation
+                    this.model.rotation.y = elapsedTime * 0.3;
+                    this.model.position.y += Math.sin(elapsedTime * 2) * 0.01;
+                    
+                    // Add slight tilt for visual interest
+                    this.model.rotation.x = Math.sin(elapsedTime) * 0.1;
+                    this.model.rotation.z = Math.cos(elapsedTime * 0.7) * 0.05;
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            handleResize() {
+                if (!this.camera || !this.renderer) return;
+                
+                const width = this.canvas.offsetWidth;
+                const height = this.canvas.offsetHeight;
+                
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+            }
+
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                if (this.renderer) {
+                    this.renderer.dispose();
+                }
+                if (this.scene) {
+                    this.scene.clear();
+                }
+            }
+
+            // Animation for pack opening
+            startOpeningAnimation() {
+                if (!this.model) return;
+                
+                // Animate the model during pack opening
+                const startTime = this.clock.getElapsedTime();
+                const animateOpening = () => {
+                    const elapsed = this.clock.getElapsedTime() - startTime;
+                    
+                    if (elapsed < 1.2) { // Match the CSS animation duration
+                        // Spin faster and scale up
+                        this.model.rotation.y = elapsed * 10;
+                        this.model.rotation.x = elapsed * 8;
+                        this.model.rotation.z = elapsed * 6;
+                        
+                        const scale = 1 + elapsed * 2;
+                        this.model.scale.setScalar(scale);
+                        
+                        // Fade out
+                        if (this.model.material) {
+                            this.model.traverse((child) => {
+                                if (child.material) {
+                                    child.material.opacity = Math.max(0, 1 - elapsed);
+                                    child.material.transparent = true;
+                                }
+                            });
+                        }
+                        
+                        requestAnimationFrame(animateOpening);
+                    }
                 };
-                const intensity = card.rarity === 'legendary' ? 30 : 15;
-                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, colors[card.rarity], intensity);
-            }, card.rarity === 'legendary' ? 1200 : 600);
-            
-            // Re-attach click handler to the new element
-            currentCard.addEventListener('click', function() {
-                if (!canClickCard) return;
-                
-                currentCardIndex++;
-                
-                if (currentCardIndex < 5) {
-                    showCard(currentCardIndex);
-                } else {
-                    displayAllCards();
-                }
-            });
-        }
-        
-        // Display all cards
-        function displayAllCards() {
-            const container = document.getElementById('allCardsDisplay');
-            container.innerHTML = '';
-            
-            // Play all cards reveal sound
-            legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
-            if (legendaryPulled) {
-                audioManager.play('allCardsReveal_withLegendary');
-            } else {
-                audioManager.play('allCardsReveal'); }
-            
-            // Reset title
-            document.getElementById('title').textContent = 'Your Collection!';
-            document.getElementById('title').className = 'title';
-            
-
-            pulledCards.forEach((card, i) => {
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'small-card ' + card.rarity;
-                cardDiv.style.animationDelay = i * 0.1 + 's';
-                
-                const img = document.createElement('img');
-                window.setProtectedImage(img, card.image);
-                img.alt = card.name;
-                
-                const glow = document.createElement('div');
-                glow.className = 'rarity-glow';
-                glow.style.opacity = '1';
-                
-                cardDiv.appendChild(glow);
-                cardDiv.appendChild(img);
-                container.appendChild(cardDiv);
-
-                // Hover effect with burst
-                cardDiv.addEventListener('mouseenter', function(e) {
-                    if (card.rarity === 'legendary') {
-                        const rect = e.target.getBoundingClientRect();
-                        createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
-                    }
-                });
-            });
-            
-            
-
-            document.getElementById('cardDisplay').style.display = 'none';
-            container.style.display = 'flex';
-        }
-        
-        // Card click handler
-        document.getElementById('currentCard').addEventListener('click', function() {
-            if (!canClickCard) return;
-            
-            currentCardIndex++;
-            
-            if (currentCardIndex < 5) {
-                showCard(currentCardIndex);
-            } else {
-                displayAllCards();
-            }
-        });
-        
-        // Pack click handler - UPDATED for mobile optimization
-        document.getElementById('packContainer').addEventListener('click', function() {
-            if (!canOpenPack()) {
-                document.getElementById('lockedMessage').style.display = 'block';
-                return;
-            }
-            const title = document.getElementById('title');
-            title.textContent = "";
-            // Play pack opening sound
-            audioManager.play('packOpen');
-            
-            // Save opened date
-            localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-            
-            // Generate pack
-            generatePack();
-            currentCardIndex = 0;
-            
-            // Start mobile-optimized opening sequence
-            const pack = document.getElementById('pack');
-            pack.classList.add('opening');
-            
-            // Simplified energy rings for mobile
-            setTimeout(() => {
-                document.getElementById('energyRing1').classList.add('active');
-            }, 100);
-            setTimeout(() => {
-                document.getElementById('energyRing2').classList.add('active');
-            }, 200);
-            setTimeout(() => {
-                document.getElementById('energyRing3').classList.add('active');
-            }, 300);
-            
-            // Create burst effects leading to white flash
-            const rect = pack.getBoundingClientRect();
-            setTimeout(() => {
-                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 20);
-            }, 400);
-            
-            // Trigger white flash explosion earlier
-            setTimeout(() => {
-                document.getElementById('flashOverlay').classList.add('active');
-            }, 600);
-            
-            // Show first card after shortened animation sequence
-            setTimeout(() => {
-                document.getElementById('packContainer').style.display = 'none';
-                document.getElementById('cardDisplay').style.display = 'block';
-                document.getElementById('flashOverlay').classList.remove('active');
-                showCard(0);
-            }, 1300);
-        });
-        
-        // Initialize particles on load
-        createParticles();
-        
-        // DEBUG MODE - Add URL parameter support
-        const urlParams = new URLSearchParams(window.location.search);
-        const debugMode = urlParams.get('debug') === 'true';
-        
-        // Debug controls
-        if (debugMode) {
-            console.log('🐛 DEBUG MODE ENABLED');
-            
-            // Add debug panel
-            const debugPanel = document.createElement('div');
-            debugPanel.style.cssText = `
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: #7cfc00;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 12px;
-                z-index: 10000;
-                border: 1px solid #7cfc00;
-            `;
-            debugPanel.innerHTML = `
-                <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
-                <button id="resetDaily" style="
-                    background: #7cfc00;
-                    color: #000;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Reset Daily Lock</button>
-                <button id="forceLegendary" style="
-                    background: #ffd700;
-                    color: #000;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Force Legendary</button>
-                <button id="instantOpen" style="
-                    background: #ff6b6b;
-                    color: #fff;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Skip Animations</button>
-                <div style="margin-top: 10px; font-size: 10px;">
-                    Press 'R' to reset<br>
-                    Press 'L' for legendary<br>
-                    Press 'Space' to open
-                </div>
-            `;
-            document.body.appendChild(debugPanel);
-            
-            // Reset button
-            document.getElementById('resetDaily').addEventListener('click', function() {
-                localStorage.removeItem(STORAGE_KEY);
-                location.reload();
-            });
-            
-            // Force legendary button
-            let forceLegendaryMode = false;
-            document.getElementById('forceLegendary').addEventListener('click', function() {
-                forceLegendaryMode = !forceLegendaryMode;
-                this.style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
-                this.textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
-                console.log('Force Legendary:', forceLegendaryMode);
-            });
-            
-            // Instant open button
-            let skipAnimations = false;
-            document.getElementById('instantOpen').addEventListener('click', function() {
-                skipAnimations = !skipAnimations;
-                this.style.background = skipAnimations ? '#00ff00' : '#ff6b6b';
-                this.textContent = skipAnimations ? 'Instant ON' : 'Skip Animations';
-                console.log('Skip Animations:', skipAnimations);
-            });
-            
-            // Override canOpenPack in debug mode
-            window.canOpenPack = function() {
-                return true; // Always allow opening in debug mode
-            };
-            
-            // Override getRandomCard for forced legendary
-            const originalGetRandomCard = getRandomCard;
-            window.getRandomCard = function() {
-                if (forceLegendaryMode) {
-                    const cards = CARD_COLLECTION.legendary;
-                    const card = cards[Math.floor(Math.random() * cards.length)];
-                    return { ...card, rarity: 'legendary' };
-                }
-                return originalGetRandomCard();
-            };
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'r' || e.key === 'R') {
-                    localStorage.removeItem(STORAGE_KEY);
-                    location.reload();
-                }
-                if (e.key === 'l' || e.key === 'L') {
-                    forceLegendaryMode = !forceLegendaryMode;
-                    document.getElementById('forceLegendary').style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
-                    document.getElementById('forceLegendary').textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
-                }
-                if (e.key === ' ') {
-                    e.preventDefault();
-                    document.getElementById('packContainer').click();
-                }
-            });
-            
-            // Speed up animations if instant mode
-            if (skipAnimations) {
-                const style = document.createElement('style');
-                style.textContent = `
-                    * {
-                        animation-duration: 0.1s !important;
-                        transition-duration: 0.1s !important;
-                    }
-                `;
-                document.head.appendChild(style);
+                animateOpening();
             }
         }
-        
-        // Check if pack is locked on load (skip in debug mode)
-        if (!debugMode && !canOpenPack()) {
-            document.getElementById('packContainer').style.opacity = '0.5';
-            document.getElementById('packContainer').style.pointerEvents = 'none';
-            document.getElementById('lockedMessage').style.display = 'block';
-            document.getElementById('title').textContent = 'Daily Pack Already Opened!';
-        }
-    </script>
-</body>
-</html>
