@@ -21,9 +21,17 @@
     <div class="lightning" id="lightning"></div>
     <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
     
-    <!-- User Info - simple indicator -->
+    <!-- User Info - shows when authenticated -->
     <div id="userInfo" style="display: none; position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; color: #7cfc00; z-index: 1000;">
-        Discord User
+        <span id="userDisplay">Discord User</span>
+    </div>
+    
+    <!-- Discord Auth Button - shows when in Discord but not authenticated -->
+    <div id="authPrompt" style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(88, 101, 242, 0.9); color: white; padding: 15px 20px; border-radius: 10px; z-index: 1000;">
+        <p style="margin: 0 0 10px 0;">Connect your Discord account to open packs</p>
+        <button id="connectDiscord" style="background: white; color: #5865f2; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            Connect Discord
+        </button>
     </div>
     
     <div class="container" id="mainContainer">
@@ -57,6 +65,7 @@
         // Simple Discord detection - just check if we're in an iframe
         let discordUser = null;
         let isInDiscord = false;
+        let isAuthenticated = false;
 
         function detectDiscordContext() {
             console.log('=== DISCORD DETECTION DEBUG ===');
@@ -70,30 +79,107 @@
             const inIframe = window.parent !== window || window.top !== window;
             
             if (inIframe) {
-                console.log('✅ DETECTED: Running in iframe (likely Discord Activity)');
+                console.log('DETECTED: Running in iframe (likely Discord Activity)');
                 return true;
             } else {
-                console.log('❌ NOT DETECTED: Running in main window (direct browser access)');
+                console.log('NOT DETECTED: Running in main window (direct browser access)');
                 return false;
             }
         }
 
-        // Create a simple user ID for rate limiting
-        function createDiscordUser() {
-            // Create a consistent user ID based on session
+        // Load Discord SDK for authentication (only when needed)
+        async function loadDiscordSDK() {
+            if (window.DiscordSDK) {
+                return true;
+            }
+            
+            try {
+                // Use the correct CDN URL
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.2.0/output/discord.js';
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                    setTimeout(reject, 10000); // 10 second timeout
+                });
+                
+                return window.DiscordSDK !== undefined;
+            } catch (error) {
+                console.error('Failed to load Discord SDK:', error);
+                return false;
+            }
+        }
+
+        // Authenticate with Discord to get real user ID
+        async function authenticateDiscord() {
+            try {
+                console.log('Starting Discord authentication...');
+                
+                const sdkLoaded = await loadDiscordSDK();
+                if (!sdkLoaded) {
+                    throw new Error('Could not load Discord SDK');
+                }
+                
+                const discordSdk = new DiscordSDK('1409944634045763625'); // Replace with your client ID
+                
+                await discordSdk.ready();
+                console.log('Discord SDK ready');
+                
+                // Try to authorize (this will show Discord's OAuth prompt)
+                const { code } = await discordSdk.commands.authorize({
+                    client_id: '1409944634045763625',
+                    response_type: 'code',
+                    state: '',
+                    prompt: 'none',
+                    scope: ['identify']
+                });
+                
+                // In a real app, you'd exchange this code for an access token on your backend
+                // For now, create a user ID from the code (this is simplified)
+                discordUser = {
+                    id: 'discord_' + btoa(code).slice(0, 10), // Create consistent ID from code
+                    username: 'Discord User',
+                    avatar: null
+                };
+                
+                console.log('Authentication successful:', discordUser);
+                isAuthenticated = true;
+                
+                // Update UI
+                document.getElementById('authPrompt').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userDisplay').textContent = discordUser.username;
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Discord authentication failed:', error);
+                alert('Failed to connect Discord account. You can still play but daily limits will be per-browser.');
+                
+                // Create fallback user for this session
+                createFallbackUser();
+                return false;
+            }
+        }
+
+        // Create a fallback user for browsers that can't/won't authenticate
+        function createFallbackUser() {
             let userId = sessionStorage.getItem('discord_activity_user');
             if (!userId) {
-                userId = 'discord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                userId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                 sessionStorage.setItem('discord_activity_user', userId);
             }
             
             discordUser = {
                 id: userId,
-                username: 'Discord User',
+                username: 'Guest User',
                 avatar: null
             };
             
-            console.log('Created user:', discordUser);
+            isAuthenticated = false;
+            console.log('Created fallback user:', discordUser);
             return discordUser;
         }
 
@@ -126,29 +212,42 @@
 
         // Main initialization
         function initializeApp() {
-            console.log('🚀 Starting app initialization...');
+            console.log('Starting app initialization...');
             
             // Detect Discord context
             isInDiscord = detectDiscordContext();
             
             if (!isInDiscord) {
-                console.log('👆 Showing Discord-only message');
+                console.log('Showing Discord-only message');
                 document.getElementById('discordOnly').style.display = 'block';
                 document.getElementById('mainContainer').style.display = 'none';
                 return;
             }
             
-            console.log('🎮 In Discord Activity - initializing game');
+            console.log('In Discord Activity - showing game');
             
-            // Create user for rate limiting
-            createDiscordUser();
+            // Start with fallback user (no authentication required)
+            createFallbackUser();
             
-            // Show user indicator
-            document.getElementById('userInfo').style.display = 'block';
-            
-            // Initialize the game
+            // Show the game
             document.getElementById('discordOnly').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
+            
+            // Show auth prompt to encourage Discord connection
+            document.getElementById('authPrompt').style.display = 'block';
+            
+            // Set up Connect Discord button
+            document.getElementById('connectDiscord').addEventListener('click', async () => {
+                document.getElementById('connectDiscord').textContent = 'Connecting...';
+                document.getElementById('connectDiscord').disabled = true;
+                
+                await authenticateDiscord();
+                
+                document.getElementById('connectDiscord').textContent = 'Connect Discord';
+                document.getElementById('connectDiscord').disabled = false;
+            });
+            
+            // Initialize the game
             initializeGame();
         }
 
