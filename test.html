@@ -4,9 +4,692 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hexapod Pack Opener</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            /* Disable text/image selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Disable drag and drop */
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(235, 252, 0, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            will-change: transform;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(100vh) translateX(0) translateZ(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100vh) translateX(100px) translateZ(0);
+                opacity: 0;
+            }
+        }
+
+        /* White flash overlay for pack opening */
+        .flash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.2) 70%, transparent 100%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            will-change: opacity, transform;
+        }
+
+        .flash-overlay.active {
+            animation: flashExplosion 1.5s ease-out forwards;
+        }
+
+        @keyframes flashExplosion {
+            0% {
+                opacity: 0;
+                transform: scale(0.1);
+            }
+            30% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+            70% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            perspective: 1000px;
+            transform: scale(1.2);
+        }
+
+        .title {
+            color: #7cfc00;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(124, 252, 0, 0.5),
+                         0 0 40px rgba(124, 252, 0, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+            transition: all 0.3s ease;
+            min-height: 35px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .title.card-name {
+            animation: none;
+            color: #fff;
+        }
+
+        .title.card-name.common {
+            text-shadow: 0 0 20px rgba(150, 150, 150, 0.8);
+        }
+
+        .title.card-name.uncommon {
+            color: #0096ff;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.8);
+        }
+
+        .title.card-name.legendary {
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                         0 0 60px rgba(255, 215, 0, 0.5);
+            animation: legendaryPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes legendaryPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .pack-container {
+            position: relative;
+            width: 200px;
+            height: 280px;
+            margin: 0 auto 30px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+
+        .pack-container:hover {
+            transform: rotateY(10deg) rotateX(-10deg) translateZ(20px);
+        }
+
+        .pack {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .pack:hover {
+            filter: brightness(1.2) drop-shadow(0 0 30px rgba(252, 214, 0, 0.5));
+        }
+
+        /* 3D Canvas for GLB model */
+        .pack-3d-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            /* Disable canvas interactions */
+            pointer-events: none;
+        }
+
+        /* Mobile-optimized pack opening animation */
+        .pack.opening {
+            animation: packOpenMobile 1.2s ease-out forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes packOpenMobile {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            40% {
+                transform: scale(1.3) rotate(10deg);
+                opacity: 1;
+            }
+            70% {
+                transform: scale(2) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(4) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Simplified energy rings for mobile */
+        .energy-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(252, 193, 0, 0.8);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        .energy-ring.active {
+            animation: energyExpandMobile 1s ease-out forwards;
+        }
+
+        @keyframes energyExpandMobile {
+            0% {
+                width: 100px;
+                height: 100px;
+                opacity: 1;
+            }
+            100% {
+                width: 400px;
+                height: 400px;
+                opacity: 0;
+            }
+        }
+
+        .card-display {
+            display: none;
+            position: relative;
+            width: 250px;
+            height: 350px;
+            margin: 0 auto;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            cursor: pointer;
+            will-change: transform;
+        }
+
+        .card:hover {
+            transform: rotateY(10deg) rotateX(-10deg) scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9),
+                        0 0 80px rgba(255, 255, 255, 0.6);
+        }
+
+
+        .card-back {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #2d5016 0%, #0f1f05 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fcb900;
+            font-weight: bold;
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .card-front {
+            width: 100%;
+            height: 100%;
+            transform: rotateY(180deg);
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 15px;
+            overflow: hidden;
+            backface-visibility: hidden;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+            /* Disable image interactions */
+            pointer-events: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            user-drag: none;
+        }
+
+        .rarity-glow {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 25px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card.common .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(150, 150, 150, 0.8), transparent);
+            animation: commonGlow 2s ease-in-out infinite;
+        }
+
+        .card.uncommon .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(0, 150, 255, 0.8), transparent);
+            animation: uncommonGlow 2s ease-in-out infinite;
+        }
+
+        .card.legendary .rarity-glow {
+            background: radial-gradient(ellipse at center, rgba(255, 215, 0, 1), rgba(255, 150, 0, 0.5), transparent);
+            animation: legendaryGlow 1s ease-in-out infinite;
+        }
+
+        .card.flipped .rarity-glow {
+            opacity: 1;
+        }
+
+        @keyframes commonGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(150, 150, 150, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(150, 150, 150, 0.8); }
+        }
+
+        @keyframes uncommonGlow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 150, 255, 0.6); }
+            50% { box-shadow: 0 0 50px rgba(0, 150, 255, 0.9); }
+        }
+
+        @keyframes legendaryGlow {
+            0%, 100% { 
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.8),
+                           0 0 80px rgba(255, 215, 0, 0.6),
+                           0 0 120px rgba(255, 215, 0, 0.4);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 60px rgba(255, 215, 0, 1),
+                           0 0 100px rgba(255, 215, 0, 0.8),
+                           0 0 140px rgba(255, 215, 0, 0.6);
+                transform: scale(1.02);
+            }
+        }
+
+        /* Card slam animation - optimized */
+        .card-slam {
+            animation: cardSlam 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes cardSlam {
+            0% {
+                transform: translateY(-150vh) scale(0.3) rotateZ(720deg) translateZ(0);
+                opacity: 0;
+            }
+            60% {
+                transform: translateY(20px) scale(1.1) rotateZ(5deg) translateZ(0);
+                opacity: 1;
+            }
+            80% {
+                transform: translateY(-5px) scale(0.95) rotateZ(-2deg) translateZ(0);
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+            }
+        }
+
+        /* Legendary card special entrance - optimized */
+        .card.legendary.card-slam {
+            animation: legendarySlam 1.5s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+
+        @keyframes legendarySlam {
+            0% {
+                transform: translateY(-200vh) scale(0.1) rotateZ(1440deg) translateZ(0);
+                opacity: 0;
+                filter: brightness(3) hue-rotate(0deg);
+            }
+            40% {
+                transform: translateY(-50px) scale(1.5) rotateZ(360deg) translateZ(0);
+                opacity: 1;
+                filter: brightness(2) hue-rotate(180deg);
+            }
+            60% {
+                transform: translateY(30px) scale(1.2) rotateZ(10deg) translateZ(0);
+                filter: brightness(1.5) hue-rotate(360deg);
+            }
+            80% {
+                transform: translateY(-10px) scale(0.9) rotateZ(-5deg) translateZ(0);
+                filter: brightness(1.2) hue-rotate(0deg);
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateZ(0deg) translateZ(0);
+                filter: brightness(1) hue-rotate(0deg);
+            }
+        }
+
+        /* Lightning effect for legendary cards */
+        .lightning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        .lightning.active {
+            display: block;
+        }
+
+        .lightning-bolt {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, #fff, transparent);
+            opacity: 0;
+            animation: lightning 0.3s ease-out forwards;
+            will-change: opacity, transform;
+        }
+
+        @keyframes lightning {
+            0% {
+                opacity: 0;
+                transform: scaleY(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scaleY(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(1);
+            }
+        }
+
+        /* Screen shake for legendary */
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5px, 5px); }
+            20% { transform: translate(5px, -5px); }
+            30% { transform: translate(-3px, 3px); }
+            40% { transform: translate(3px, -3px); }
+            50% { transform: translate(-2px, 2px); }
+            60% { transform: translate(2px, -2px); }
+            70% { transform: translate(-4px, 4px); }
+            80% { transform: translate(4px, -4px); }
+            90% { transform: translate(-1px, 1px); }
+        }
+
+        .screen-shake {
+            animation: screenShake 0.5s ease-out;
+        }
+
+        .click-hint {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .all-cards-display {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .small-card {
+            width: 120px;
+            height: 168px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            position: relative;
+            opacity: 0;
+            animation: cardFadeIn 0.5s ease-out forwards;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8) translateZ(0);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) translateZ(0);
+            }
+        }
+
+        .small-card:hover {
+            transform: scale(1.15) translateY(-10px) rotateZ(2deg) translateZ(20px);
+            z-index: 100;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .small-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            /* Disable image interactions */
+            pointer-events: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            user-drag: none;
+        }
+
+        .small-card.legendary {
+            animation: cardFadeIn 0.5s ease-out forwards, legendaryFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes legendaryFloat {
+            0%, 100% { transform: translateY(0) translateZ(0); }
+            50% { transform: translateY(-5px) translateZ(0); }
+        }
+
+        .burst-particles {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .burst-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: burst 1s ease-out forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes burst {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .locked-message {
+            color: #ff4444;
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 2px solid #ff4444;
+            border-radius: 10px;
+        }
+
+        /* Legendary announcement */
+        .legendary-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                         0 0 60px rgba(255, 215, 0, 0.6),
+                         0 0 90px rgba(255, 215, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1001;
+            will-change: transform, opacity;
+        }
+
+        .legendary-announcement.show {
+            animation: legendaryAnnounce 2s ease-out forwards;
+        }
+
+        @keyframes legendaryAnnounce {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+                letter-spacing: 20px;
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+                letter-spacing: 5px;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+                letter-spacing: 2px;
+            }
+        }
+
+        /* Loading indicator for 3D model */
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #7cfc00;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(124, 252, 0, 0.3);
+            border-top: 3px solid #7cfc00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+
     <script>
         // Image protection measures (disabled in debug mode)
         (function() {
@@ -63,30 +746,9 @@
             };
             
         })();
-
-        // ===========================================
-        // CONFIG - Replace with your actual values
-        // ===========================================
-        const CONFIG = {
-            // Your Supabase project URL (found in Supabase Settings > API)
-            SUPABASE_URL: 'https://ewndxtwgdmsfdfledixs.supabase.co',
-            
-            // Your Supabase anon key (found in Supabase Settings > API)
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3bmR4dHdnZG1zZmRmbGVkaXhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDQwNjMsImV4cCI6MjA3MTk4MDA2M30.a2_vA5GVCB4dqddtRzdOuNNeaVan3rtJt7UE9PQl74I',
-            
-            // Your Discord application client ID (from Discord Developer Portal)
-            DISCORD_CLIENT_ID: '1409944634045763625',
-            
-            // Your redirect URI (your GitHub Pages URL or localhost for testing)
-            DISCORD_REDIRECT_URI: 'http://sillvernhancs.github.io',
-            
-            // Alternative for local testing:
-            // DISCORD_REDIRECT_URI: 'http://localhost:8000/',
-        };
-
         
         // REPLACE THESE WITH YOUR OWN ASSETS
-        const PACK_IMAGE = 'HexapodTCGPack.png';
+        const PACK_GLB_MODEL = 'HexapodTCGPack.glb'; // Replace with your GLB file path
         
         // Card collection with rarity and image URLs
         const CARD_COLLECTION = {
@@ -112,18 +774,26 @@
             ]
         };
 
+        // Rarity chances (must add up to 100)
+        const RARITY_CHANCES = {
+            common: 75,     // ~74% chance
+            uncommon: 23,   // ~23% chance
+            legendary: 2      // 3% chance
+        };
+
         // Audio settings
         const AUDIO_SETTINGS = {
+            // Replace these URLs with your own audio files
             backgroundMusic: 'sfx/backtrack.mp3',
-            packOpen: 'sfx/tcg pack open.mp3',
-            cardSlam: 'sfx/Card Deal 2.wav',
-            commonReveal: 'sfx/card_deal.mp3',
-            uncommonReveal: 'sfx/card_deal.mp3',
-            legendaryReveal: 'sfx/card_deal.mp3',
-            legendaryAnoucement: 'sfx/legendary annoucement.mp3',
+            packOpen: 'sfx/tcg pack open.mp3', // Placeholder
+            cardSlam: 'sfx/Card Deal 2.wav', // Placeholder
+            commonReveal: 'sfx/card_deal.mp3', // Placeholder
+            uncommonReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryAnoucement: 'sfx/legendary annoucement.mp3', // Placeholder.  balatro/holo1.ogg
             uncommonAnoucement: 'sfx/uncommon.mp3',
-            allCardsReveal: 'sfx/cardflips.mp3',
-            allCardsReveal_withLegendary: ''
+            allCardsReveal: 'sfx/cardflips.mp3', // Placeholder
+            allCardsReveal_withLegendary: '' // Placeholder
         };
     </script>
 
@@ -132,49 +802,16 @@
     <div class="lightning" id="lightning"></div>
     <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
     
-    <!-- Discord Login Screen -->
-    <div class="discord-login" id="discordLogin">
-        <div class="login-container">
-            <h1 class="title">Hexapod TCG</h1>
-            <div class="login-card">
-                <h2>Daily Pack Opener</h2>
-                <p>Login with Discord to open your daily pack!</p>
-                <button class="discord-btn" id="discordLoginBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-                    </svg>
-                    Login with Discord
-                </button>
-                <div class="user-info" id="userInfo" style="display: none;">
-                    <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
-                    <span id="userName">Loading...</span>
-                    <button class="logout-btn" id="logoutBtn">Logout</button>
-                </div>
-                <div class="loading-message" id="loadingMessage" style="display: none;">
-                    <p>Authenticating...</p>
-                </div>
-                <div class="error-message" id="errorMessage" style="display: none;">
-                    <p id="errorText">An error occurred. Please try again.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Game -->
-    <div class="container" id="mainContainer" style="display: none;">
-        <div class="user-bar" id="userBar">
-            <div class="user-display">
-                <img id="gameUserAvatar" src="" alt="Avatar" class="small-avatar">
-                <span id="gameUserName">Player</span>
-            </div>
-            <button class="logout-btn small" id="gameLogoutBtn">Logout</button>
-        </div>
-        
+    <div class="container" id="mainContainer">
         <h1 class="title" id="title">Open Your Daily Pack!</h1>
         
         <div class="pack-container" id="packContainer">
             <div class="pack" id="pack">
-                <img src="" id="packImage" class="pack-image" alt="Card Pack">
+                <canvas class="pack-3d-canvas" id="pack3DCanvas"></canvas>
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    Loading 3D Model...
+                </div>
             </div>
             <div class="energy-ring" id="energyRing1"></div>
             <div class="energy-ring" id="energyRing2"></div>
@@ -197,808 +834,239 @@
     </div>
 
     <script>
-        // ===========================================
-        // AUDIO MANAGER
-        // ===========================================
-        class AudioManager {
-            constructor() {
-                this.musicEnabled = true;
-                this.sfxEnabled = true;
-                this.volume = 0.5;
-                this.backgroundMusic = null;
-                this.musicWasPlaying = false;
-                this.initAudio();
-                this.setupVisibilityHandling();
-            }
-
-            initAudio() {
-                if (AUDIO_SETTINGS.backgroundMusic) {
-                    this.backgroundMusic = new Audio(AUDIO_SETTINGS.backgroundMusic);
-                    this.backgroundMusic.loop = true;
-                    this.backgroundMusic.volume = this.volume * 0.3;
-                }
+        // 3D Model Manager
+        class Pack3DViewer {
+            constructor(canvasId, modelUrl) {
+                this.canvas = document.getElementById(canvasId);
+                this.modelUrl = modelUrl;
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.model = null;
+                this.isLoaded = false;
+                this.animationId = null;
+                this.clock = new THREE.Clock();
                 
-                document.addEventListener('click', () => {
-                    if (this.musicEnabled) {
-                        this.playBackgroundMusic();
-                    }
-                }, { once: true });
-            }
-
-            setupVisibilityHandling() {
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) {
-                        if (this.backgroundMusic && !this.backgroundMusic.paused) {
-                            this.musicWasPlaying = true;
-                            this.backgroundMusic.pause();
-                        }
-                    } else {
-                        if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
-                            this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
-                        }
-                    }
-                });
-
-                window.addEventListener('blur', () => {
-                    if (this.backgroundMusic && !this.backgroundMusic.paused) {
-                        this.musicWasPlaying = true;
-                        this.backgroundMusic.pause();
-                    }
-                });
-
-                window.addEventListener('focus', () => {
-                    if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
-                        this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
-                    }
-                });
-            }
-
-            playAudio(filename, volume = 1.0) {
-                if (!this.sfxEnabled || !filename) return;
-                
-                const audio = new Audio(filename);
-                audio.volume = this.volume * volume;
-                audio.play().catch(e => console.log('Could not play audio:', filename));
-                
-                return audio;
-            }
-
-            playBackgroundMusic() {
-                if (!this.musicEnabled || !this.backgroundMusic) return;
-                
-                this.musicWasPlaying = true;
-                this.backgroundMusic.currentTime = 0;
-                this.backgroundMusic.play().catch(e => console.log('Could not play background music'));
-            }
-
-            stopBackgroundMusic() {
-                if (this.backgroundMusic) {
-                    this.musicWasPlaying = false;
-                    this.backgroundMusic.pause();
-                    this.backgroundMusic.currentTime = 0;
-                }
-            }
-
-            play(soundName) {
-                const filename = AUDIO_SETTINGS[soundName];
-                if (filename) {
-                    this.playAudio(filename);
-                }
-            }
-        }
-
-        // ===========================================
-        // DISCORD AUTH CLASS
-        // ===========================================
-        class DiscordAuth {
-            constructor() {
-                this.supabaseUrl = CONFIG.SUPABASE_URL;
-                this.currentUser = null;
                 this.init();
+                this.loadModel();
             }
 
             init() {
-                // Check for existing session
-                const savedUser = localStorage.getItem('discord_user');
-                if (savedUser) {
-                    this.currentUser = JSON.parse(savedUser);
-                    this.showMainGame();
-                } else {
-                    // Check if we're returning from Discord OAuth
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const code = urlParams.get('code');
-                    
-                    if (code) {
-                        this.handleOAuthCallback(code);
-                    } else {
-                        this.showLoginScreen();
-                    }
-                }
-
-                this.setupEventListeners();
-            }
-
-            setupEventListeners() {
-                const discordLoginBtn = document.getElementById('discordLoginBtn');
-                if (discordLoginBtn) {
-                    discordLoginBtn.addEventListener('click', () => this.initiateLogin());
-                }
-
-                const logoutBtn = document.getElementById('logoutBtn');
-                const gameLogoutBtn = document.getElementById('gameLogoutBtn');
+                // Scene setup
+                this.scene = new THREE.Scene();
                 
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', () => this.logout());
-                }
+                // Camera setup
+                this.camera = new THREE.PerspectiveCamera(
+                    50, 
+                    this.canvas.offsetWidth / this.canvas.offsetHeight, 
+                    0.1, 
+                    1000
+                );
+                this.camera.position.set(0, 0, 5);
                 
-                if (gameLogoutBtn) {
-                    gameLogoutBtn.addEventListener('click', () => this.logout());
-                }
-            }
-
-            initiateLogin() {
-                const params = new URLSearchParams({
-                    client_id: CONFIG.DISCORD_CLIENT_ID,
-                    redirect_uri: CONFIG.DISCORD_REDIRECT_URI,
-                    response_type: 'code',
-                    scope: 'identify email',
+                // Renderer setup
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: this.canvas, 
+                    alpha: true, 
+                    antialias: true 
                 });
-
-                window.location.href = `https://discord.com/oauth2/authorize?${params.toString()}`;
-            }
-
-            async handleOAuthCallback(code) {
-                try {
-                    this.showLoading('Authenticating with Discord...');
-
-                    // Clean up URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-
-                    // Send code to Supabase Edge Function
-                    const response = await fetch(`${this.supabaseUrl}/functions/v1/discord-oauth`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                        },
-                        body: JSON.stringify({ code }),
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Authentication failed');
-                    }
-
-                    const data = await response.json();
-                    this.currentUser = data.user;
-
-                    // Save user data to localStorage
-                    localStorage.setItem('discord_user', JSON.stringify(this.currentUser));
-
-                    this.showMainGame();
-                } catch (error) {
-                    console.error('OAuth callback error:', error);
-                    this.showError('Authentication failed. Please try again.');
-                    this.showLoginScreen();
-                }
-            }
-
-            async refreshUserData() {
-                if (!this.currentUser) return;
-
-                try {
-                    const response = await fetch(
-                        `${this.supabaseUrl}/functions/v1/discord-oauth?user_id=${this.currentUser.id}`,
-                        {
-                            headers: {
-                                'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                            },
-                        }
-                    );
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.currentUser = data.user;
-                        localStorage.setItem('discord_user', JSON.stringify(this.currentUser));
-                    }
-                } catch (error) {
-                    console.error('Failed to refresh user data:', error);
-                }
-            }
-
-            showLoginScreen() {
-                document.getElementById('discordLogin').style.display = 'flex';
-                document.getElementById('mainContainer').style.display = 'none';
-                this.hideLoading();
-                this.hideError();
-            }
-
-            showMainGame() {
-                document.getElementById('discordLogin').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-
-                if (this.currentUser) {
-                    // Update user display elements
-                    const gameUserAvatar = document.getElementById('gameUserAvatar');
-                    const gameUserName = document.getElementById('gameUserName');
-
-                    if (gameUserAvatar && this.currentUser.avatar_url) {
-                        gameUserAvatar.src = this.currentUser.avatar_url;
-                        gameUserAvatar.onerror = () => {
-                            gameUserAvatar.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
-                        };
-                    }
-
-                    if (gameUserName) {
-                        gameUserName.textContent = this.currentUser.username;
-                    }
-
-                    // Check if user has already opened today's pack
-                    this.updatePackStatus();
-                }
-            }
-
-            updatePackStatus() {
-                const titleElement = document.getElementById('title');
-                const packContainer = document.getElementById('packContainer');
-                const lockedMessage = document.getElementById('lockedMessage');
-
-                if (this.currentUser && this.currentUser.has_opened_today) {
-                    if (titleElement) titleElement.textContent = 'Pack Already Opened!';
-                    if (packContainer) {
-                        packContainer.style.opacity = '0.5';
-                        packContainer.style.pointerEvents = 'none';
-                    }
-                    if (lockedMessage) lockedMessage.style.display = 'block';
-                } else {
-                    if (titleElement) titleElement.textContent = 'Open Your Daily Pack!';
-                    if (packContainer) {
-                        packContainer.style.opacity = '1';
-                        packContainer.style.pointerEvents = 'auto';
-                    }
-                    if (lockedMessage) lockedMessage.style.display = 'none';
-                }
-            }
-
-            showLoading(message) {
-                const loadingDiv = document.getElementById('loadingMessage');
-                if (loadingDiv) {
-                    loadingDiv.style.display = 'block';
-                    loadingDiv.querySelector('p').textContent = message;
-                }
-            }
-
-            hideLoading() {
-                const loadingDiv = document.getElementById('loadingMessage');
-                if (loadingDiv) {
-                    loadingDiv.style.display = 'none';
-                }
-            }
-
-            showError(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.querySelector('#errorText').textContent = message;
-                }
-            }
-
-            hideError() {
-                const errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.style.display = 'none';
-                }
-            }
-
-            logout() {
-                this.currentUser = null;
-                localStorage.removeItem('discord_user');
-                this.showLoginScreen();
+                this.renderer.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1;
                 
-                // Reset the game state
-                if (window.game) {
-                    window.game.reset();
-                }
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 0.5);
+                this.scene.add(directionalLight);
+                
+                const pointLight = new THREE.PointLight(0x7cfc00, 0.5, 10);
+                pointLight.position.set(0, 2, 2);
+                this.scene.add(pointLight);
+                
+                // Handle window resize
+                window.addEventListener('resize', () => this.handleResize());
             }
 
-            getCurrentUser() {
-                return this.currentUser;
-            }
-
-            isLoggedIn() {
-                return !!this.currentUser;
-            }
-        }
-
-        // ===========================================
-        // GAME CLASS
-        // ===========================================
-        class HexapodGame {
-            constructor() {
-                this.cards = [];
-                this.currentCardIndex = 0;
-                this.isPackOpened = false;
-                this.canClickCard = false;
-                this.init();
-            }
-
-            init() {
-                this.setupEventListeners();
-                this.createParticles();
+            loadModel() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                loadingIndicator.classList.add('show');
                 
-                // Initialize pack image
-                const packImg = document.getElementById('packImage');
-                window.setProtectedImage(packImg, PACK_IMAGE);
-            }
-
-            setupEventListeners() {
-                const packContainer = document.getElementById('packContainer');
-                const currentCard = document.getElementById('currentCard');
-                
-                if (packContainer) {
-                    packContainer.addEventListener('click', () => this.openPack());
-                }
-                
-                if (currentCard) {
-                    currentCard.addEventListener('click', () => this.nextCard());
-                }
-            }
-
-            async openPack() {
-                if (this.isPackOpened) return;
-                if (!window.discordAuth || !window.discordAuth.isLoggedIn()) {
-                    alert('Please log in first!');
-                    return;
-                }
-
-                const user = window.discordAuth.getCurrentUser();
-                if (user.has_opened_today) {
-                    alert('You have already opened your daily pack! Come back tomorrow.');
-                    return;
-                }
-
-                try {
-                    this.showLoading(true);
-                    
-                    // Call the open-pack Edge Function
-                    const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/open-pack`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                        },
-                        body: JSON.stringify({ user_id: user.id }),
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to open pack');
-                    }
-
-                    const data = await response.json();
-                    
-                    // Convert backend cards to frontend format
-                    this.cards = data.cards.map(backendCard => {
-                        // Find matching card from CARD_COLLECTION
-                        const rarityCards = CARD_COLLECTION[backendCard.rarity] || CARD_COLLECTION.common;
-                        const matchingCard = rarityCards[Math.floor(Math.random() * rarityCards.length)];
-                        
-                        return {
-                            ...matchingCard,
-                            rarity: backendCard.rarity
-                        };
-                    });
-                    
-                    // Update user status
-                    user.has_opened_today = true;
-                    localStorage.setItem('discord_user', JSON.stringify(user));
-                    
-                    // Start pack opening animation
-                    this.animatePackOpening();
-                    
-                } catch (error) {
-                    console.error('Failed to open pack:', error);
-                    alert('Failed to open pack: ' + error.message);
-                } finally {
-                    this.showLoading(false);
-                }
-            }
-
-            showLoading(show) {
-                const pack = document.getElementById('pack');
-                if (pack) {
-                    pack.style.pointerEvents = show ? 'none' : 'auto';
-                    pack.style.opacity = show ? '0.7' : '1';
-                }
-            }
-
-            animatePackOpening() {
-                this.isPackOpened = true;
-                
-                const packContainer = document.getElementById('packContainer');
-                const pack = document.getElementById('pack');
-                const cardDisplay = document.getElementById('cardDisplay');
-                
-                if (!pack || !cardDisplay) return;
-
-                // Play pack opening sound
-                audioManager.play('packOpen');
-
-                // Reset title
-                const title = document.getElementById('title');
-                title.textContent = "";
-
-                // Add pack opening animation
-                pack.classList.add('opening');
-                
-                // Start energy rings animation
-                this.animateEnergyRings();
-                
-                // Show first card after animation
-                setTimeout(() => {
-                    if (packContainer) packContainer.style.display = 'none';
-                    cardDisplay.style.display = 'block';
-                    this.showCard(0);
-                }, 1300);
-            }
-
-            showCard(index) {
-                if (index >= this.cards.length) {
-                    this.showAllCards();
-                    return;
-                }
-
-                const card = this.cards[index];
-                const cardImage = document.getElementById('cardImage');
-                const currentCard = document.getElementById('currentCard');
-                
-                if (!cardImage || !currentCard) return;
-
-                // Force animation reset by removing and re-adding the element
-                const newCard = currentCard.cloneNode(true);
-                currentCard.parentNode.replaceChild(newCard, currentCard);
-                
-                // Get the new reference
-                const updatedCard = document.getElementById('currentCard');
-                const updatedImage = document.getElementById('cardImage');
-                
-                // Reset card with proper animation
-                updatedCard.className = 'card ' + card.rarity;
-                updatedCard.classList.add('card-slam');
-                updatedCard.classList.remove('flipped');
-                this.canClickCard = false;
-                
-                // Play card slam sound
-                audioManager.play('cardSlam');
-                
-                // Update title
-                this.updateTitle(card);
-                
-                // Set card image with protection
-                window.setProtectedImage(updatedImage, card.image);
-
-                // Special effects for rarity
-                if (card.rarity === 'uncommon') {
-                    audioManager.play('uncommonAnoucement');
-                }
-                
-                if (card.rarity === 'legendary') {
-                    audioManager.play('legendaryAnoucement');
-                    
-                    // Show legendary announcement
-                    const announcement = document.getElementById('legendaryAnnouncement');
-                    announcement.classList.add('show');
-                    setTimeout(() => announcement.classList.remove('show'), 2000);
-                    
-                    // Screen shake
-                    document.getElementById('mainContainer').classList.add('screen-shake');
-                    setTimeout(() => {
-                        document.getElementById('mainContainer').classList.remove('screen-shake');
-                    }, 500);
-                    
-                    // Lightning effect
-                    this.createLightning();
-                }
-                
-                // Auto flip after animation
-                setTimeout(() => {
-                    updatedCard.classList.add('flipped');
-                    this.canClickCard = true;
-                    
-                    // Play rarity-specific reveal sound
-                    audioManager.play(card.rarity + 'Reveal');
-                    
-                }, card.rarity === 'legendary' ? 1200 : 600);
-                
-                // Re-attach click handler to the new element
-                updatedCard.addEventListener('click', () => {
-                    if (!this.canClickCard) return;
-                    this.nextCard();
-                });
-                
-                this.currentCardIndex = index;
-            }
-
-            nextCard() {
-                if (this.currentCardIndex < this.cards.length - 1) {
-                    this.showCard(this.currentCardIndex + 1);
-                } else {
-                    this.showAllCards();
-                }
-            }
-
-            showAllCards() {
-                const cardDisplay = document.getElementById('cardDisplay');
-                const allCardsDisplay = document.getElementById('allCardsDisplay');
-                const title = document.getElementById('title');
-                
-                if (cardDisplay) cardDisplay.style.display = 'none';
-                if (allCardsDisplay) {
-                    allCardsDisplay.style.display = 'flex';
-                    allCardsDisplay.innerHTML = '';
-                    
-                    // Play all cards reveal sound
-                    const legendaryPulled = this.cards.some(card => card.rarity === 'legendary');
-                    if (legendaryPulled) {
-                        audioManager.play('allCardsReveal_withLegendary');
+                // Check if GLTFLoader is available
+                if (typeof THREE.GLTFLoader === 'undefined') {
+                    console.error('GLTFLoader not found. Trying alternative approach...');
+                    // Try using the global GLTFLoader if available
+                    if (typeof GLTFLoader !== 'undefined') {
+                        const loader = new GLTFLoader();
+                        this.loadWithLoader(loader, loadingIndicator);
                     } else {
-                        audioManager.play('allCardsReveal');
+                        this.handleLoadError('GLTFLoader not available', loadingIndicator);
                     }
-                    
-                    // Show all cards
-                    this.cards.forEach((card, i) => {
-                        const cardDiv = document.createElement('div');
-                        cardDiv.className = 'small-card ' + card.rarity;
-                        cardDiv.style.animationDelay = i * 0.1 + 's';
-                        
-                        const img = document.createElement('img');
-                        window.setProtectedImage(img, card.image);
-                        img.alt = card.name;
-                        
-                        const glow = document.createElement('div');
-                        glow.className = 'rarity-glow';
-                        glow.style.opacity = '1';
-                        
-                        cardDiv.appendChild(glow);
-                        cardDiv.appendChild(img);
-                        allCardsDisplay.appendChild(cardDiv);
+                    return;
+                }
+                
+                const loader = new THREE.GLTFLoader();
+                this.loadWithLoader(loader, loadingIndicator);
+            }
 
-                        // Hover effect with burst
-                        cardDiv.addEventListener('mouseenter', function(e) {
-                            if (card.rarity === 'legendary') {
-                                const rect = e.target.getBoundingClientRect();
-                                // createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
+            loadWithLoader(loader, loadingIndicator) {
+                console.log('Attempting to load 3D model:', this.modelUrl);
+                
+                loader.load(
+                    this.modelUrl,
+                    (gltf) => {
+                        console.log('3D model loaded successfully:', gltf);
+                        this.model = gltf.scene;
+                        
+                        // Center and scale the model
+                        const box = new THREE.Box3().setFromObject(this.model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+                        
+                        console.log('Model size:', size);
+                        console.log('Model center:', center);
+                        
+                        // Scale to fit in view
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = maxDim > 0 ? 2 / maxDim : 1;
+                        this.model.scale.setScalar(scale);
+                        
+                        // Center the model
+                        this.model.position.sub(center.multiplyScalar(scale));
+                        
+                        // Ensure the model is visible
+                        this.model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                // Make sure materials are visible
+                                if (child.material) {
+                                    child.material.transparent = false;
+                                    child.material.opacity = 1;
+                                }
                             }
                         });
-                    });
-                }
-                
-                if (title) {
-                    title.textContent = 'Your Collection!';
-                    title.className = 'title';
-                }
-                
-                // Update the auth status
-                if (window.discordAuth) {
-                    window.discordAuth.updatePackStatus();
-                }
-            }
-
-            updateTitle(card) {
-                const title = document.getElementById('title');
-                if (title) {
-                    title.textContent = card.name;
-                    title.className = 'title card-name ' + card.rarity;
-                }
-            }
-
-            animateEnergyRings() {
-                const rings = ['energyRing1', 'energyRing2', 'energyRing3'];
-                rings.forEach((ringId, index) => {
-                    const ring = document.getElementById(ringId);
-                    if (ring) {
-                        setTimeout(() => {
-                            ring.classList.add('active');
-                        }, index * 100 + 100);
+                        
+                        this.scene.add(this.model);
+                        this.isLoaded = true;
+                        
+                        loadingIndicator.classList.remove('show');
+                        console.log('3D model added to scene and animation started');
+                        this.animate();
+                    },
+                    (progress) => {
+                        // Loading progress
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        console.log('Loading progress:', percent + '%');
+                        loadingIndicator.innerHTML = `<div class="spinner"></div>Loading 3D Model... ${percent}%`;
+                    },
+                    (error) => {
+                        this.handleLoadError(error, loadingIndicator);
                     }
-                });
+                );
             }
 
-            createLightning() {
-                const lightning = document.getElementById('lightning');
-                if (lightning) {
-                    lightning.innerHTML = '';
-                    lightning.classList.add('active');
+            handleLoadError(error, loadingIndicator) {
+                console.error('Error loading 3D model:', error);
+                console.log('Model URL attempted:', this.modelUrl);
+                
+                // Create a fallback cube so we can see something is working
+                const geometry = new THREE.BoxGeometry(1, 1.5, 0.1);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0x7cfc00,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                this.model = new THREE.Mesh(geometry, material);
+                this.scene.add(this.model);
+                this.isLoaded = true;
+                
+                loadingIndicator.innerHTML = '<div style="color: #ff4444; font-size: 12px;">3D model failed to load<br>Using fallback cube<br>Check console for details</div>';
+                
+                setTimeout(() => {
+                    loadingIndicator.classList.remove('show');
+                    this.animate();
+                }, 3000);
+            }
+
+            animate() {
+                if (!this.isLoaded) return;
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+                
+                const elapsedTime = this.clock.getElapsedTime();
+                
+                if (this.model) {
+                    // Gentle rotation and floating animation
+                    this.model.rotation.y = elapsedTime * 0.3;
+                    this.model.position.y += Math.sin(elapsedTime * 2) * 0.01;
                     
-                    for (let i = 0; i < 5; i++) {
-                        const bolt = document.createElement('div');
-                        bolt.className = 'lightning-bolt';
-                        bolt.style.left = Math.random() * 100 + '%';
-                        bolt.style.animationDelay = i * 0.1 + 's';
-                        lightning.appendChild(bolt);
+                    // Add slight tilt for visual interest
+                    this.model.rotation.x = Math.sin(elapsedTime) * 0.1;
+                    this.model.rotation.z = Math.cos(elapsedTime * 0.7) * 0.05;
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            handleResize() {
+                if (!this.camera || !this.renderer) return;
+                
+                const width = this.canvas.offsetWidth;
+                const height = this.canvas.offsetHeight;
+                
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+            }
+
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                if (this.renderer) {
+                    this.renderer.dispose();
+                }
+                if (this.scene) {
+                    this.scene.clear();
+                }
+            }
+
+            // Animation for pack opening
+            startOpeningAnimation() {
+                if (!this.model) return;
+                
+                // Animate the model during pack opening
+                const startTime = this.clock.getElapsedTime();
+                const animateOpening = () => {
+                    const elapsed = this.clock.getElapsedTime() - startTime;
+                    
+                    if (elapsed < 1.2) { // Match the CSS animation duration
+                        // Spin faster and scale up
+                        this.model.rotation.y = elapsed * 10;
+                        this.model.rotation.x = elapsed * 8;
+                        this.model.rotation.z = elapsed * 6;
+                        
+                        const scale = 1 + elapsed * 2;
+                        this.model.scale.setScalar(scale);
+                        
+                        // Fade out
+                        if (this.model.material) {
+                            this.model.traverse((child) => {
+                                if (child.material) {
+                                    child.material.opacity = Math.max(0, 1 - elapsed);
+                                    child.material.transparent = true;
+                                }
+                            });
+                        }
+                        
+                        requestAnimationFrame(animateOpening);
                     }
-                    
-                    setTimeout(() => {
-                        lightning.classList.remove('active');
-                    }, 1000);
-                }
-            }
-
-            createParticles() {
-                const particlesContainer = document.getElementById('particles');
-                if (!particlesContainer) return;
-                
-                for (let i = 0; i < 20; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.left = Math.random() * 100 + '%';
-                    particle.style.animationDelay = Math.random() * 15 + 's';
-                    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-                    particlesContainer.appendChild(particle);
-                }
-            }
-
-            reset() {
-                this.cards = [];
-                this.currentCardIndex = 0;
-                this.isPackOpened = false;
-                this.canClickCard = false;
-                
-                // Reset UI
-                const packContainer = document.getElementById('packContainer');
-                const cardDisplay = document.getElementById('cardDisplay');
-                const allCardsDisplay = document.getElementById('allCardsDisplay');
-                const pack = document.getElementById('pack');
-                const title = document.getElementById('title');
-                
-                if (packContainer) packContainer.style.display = 'flex';
-                if (cardDisplay) cardDisplay.style.display = 'none';
-                if (allCardsDisplay) allCardsDisplay.style.display = 'none';
-                if (pack) pack.classList.remove('opening');
-                if (title) {
-                    title.textContent = 'Open Your Daily Pack!';
-                    title.className = 'title';
-                }
-                
-                // Clear energy rings
-                const rings = ['energyRing1', 'energyRing2', 'energyRing3'];
-                rings.forEach(ringId => {
-                    const ring = document.getElementById(ringId);
-                    if (ring) ring.classList.remove('active');
-                });
-            }
-        }
-
-        // ===========================================
-        // INITIALIZATION
-        // ===========================================
-        
-        // Initialize audio manager
-        const audioManager = new AudioManager();
-        
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Discord Auth
-            window.discordAuth = new DiscordAuth();
-            
-            // Initialize Game
-            window.game = new HexapodGame();
-        });
-
-        // ===========================================
-        // DEBUG MODE
-        // ===========================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const debugMode = urlParams.get('debug') === 'true';
-        
-        if (debugMode) {
-            console.log('🐛 DEBUG MODE ENABLED');
-            
-            // Add debug panel
-            const debugPanel = document.createElement('div');
-            debugPanel.style.cssText = `
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: #7cfc00;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 12px;
-                z-index: 10000;
-                border: 1px solid #7cfc00;
-            `;
-            debugPanel.innerHTML = `
-                <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
-                <div style="margin-bottom: 5px; font-size: 10px; color: #999;">Right-click & F12 enabled</div>
-                <button id="debugLogin" style="
-                    background: #7cfc00;
-                    color: #000;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Fake Login</button>
-                <button id="debugReset" style="
-                    background: #ff6b6b;
-                    color: #fff;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Reset State</button>
-                <button id="debugPack" style="
-                    background: #ffd700;
-                    color: #000;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Force Open Pack</button>
-                <div style="margin-top: 10px; font-size: 10px;">
-                    Press 'L' for fake login<br>
-                    Press 'R' to reset<br>
-                    Press 'P' to force pack
-                </div>
-            `;
-            document.body.appendChild(debugPanel);
-            
-            // Debug login button
-            document.getElementById('debugLogin').addEventListener('click', function() {
-                const fakeUser = {
-                    id: 'debug-user-123',
-                    discord_id: '123456789',
-                    username: 'Debug User',
-                    avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
-                    has_opened_today: false,
                 };
-                
-                localStorage.setItem('discord_user', JSON.stringify(fakeUser));
-                window.discordAuth.currentUser = fakeUser;
-                window.discordAuth.showMainGame();
-            });
-            
-            // Reset button
-            document.getElementById('debugReset').addEventListener('click', function() {
-                localStorage.clear();
-                location.reload();
-            });
-            
-            // Force pack button
-            document.getElementById('debugPack').addEventListener('click', function() {
-                // Generate fake pack data
-                const fakeCards = [];
-                for (let i = 0; i < 5; i++) {
-                    const rarities = ['common', 'uncommon', 'legendary'];
-                    const rarity = rarities[Math.floor(Math.random() * rarities.length)];
-                    const cards = CARD_COLLECTION[rarity];
-                    const card = cards[Math.floor(Math.random() * cards.length)];
-                    fakeCards.push({ ...card, rarity });
-                }
-                
-                window.game.cards = fakeCards;
-                window.game.animatePackOpening();
-            });
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'l' || e.key === 'L') {
-                    document.getElementById('debugLogin').click();
-                }
-                if (e.key === 'r' || e.key === 'R') {
-                    document.getElementById('debugReset').click();
-                }
-                if (e.key === 'p' || e.key === 'P') {
-                    document.getElementById('debugPack').click();
-                }
-            });
+                animateOpening();
+            }
         }
-    </script>
-</body>
-</html>

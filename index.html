@@ -63,27 +63,6 @@
             };
             
         })();
-
-        // ===========================================
-        // CONFIG - Replace with your actual values
-        // ===========================================
-        const CONFIG = {
-            // Your Supabase project URL (found in Supabase Settings > API)
-            SUPABASE_URL: 'https://ewndxtwgdmsfdfledixs.supabase.co',
-            
-            // Your Supabase anon key (found in Supabase Settings > API)
-            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3bmR4dHdnZG1zZmRmbGVkaXhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDQwNjMsImV4cCI6MjA3MTk4MDA2M30.a2_vA5GVCB4dqddtRzdOuNNeaVan3rtJt7UE9PQl74I',
-            
-            // Your Discord application client ID (from Discord Developer Portal)
-            DISCORD_CLIENT_ID: '1409944634045763625',
-            
-            // Your redirect URI (your GitHub Pages URL or localhost for testing)
-            DISCORD_REDIRECT_URI: 'http://sillvernhancs.github.io',
-            
-            // Alternative for local testing:
-            // DISCORD_REDIRECT_URI: 'http://localhost:8000/',
-        };
-
         
         // REPLACE THESE WITH YOUR OWN ASSETS
         const PACK_IMAGE = 'HexapodTCGPack.png';
@@ -112,18 +91,26 @@
             ]
         };
 
+        // Rarity chances (must add up to 100)
+        const RARITY_CHANCES = {
+            common: 75,     // ~74% chance
+            uncommon: 23,   // ~23% chance
+            legendary: 2      // 3% chance
+        };
+
         // Audio settings
         const AUDIO_SETTINGS = {
+            // Replace these URLs with your own audio files
             backgroundMusic: 'sfx/backtrack.mp3',
-            packOpen: 'sfx/tcg pack open.mp3',
-            cardSlam: 'sfx/Card Deal 2.wav',
-            commonReveal: 'sfx/card_deal.mp3',
-            uncommonReveal: 'sfx/card_deal.mp3',
-            legendaryReveal: 'sfx/card_deal.mp3',
-            legendaryAnoucement: 'sfx/legendary annoucement.mp3',
+            packOpen: 'sfx/tcg pack open.mp3', // Placeholder
+            cardSlam: 'sfx/Card Deal 2.wav', // Placeholder
+            commonReveal: 'sfx/card_deal.mp3', // Placeholder
+            uncommonReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryReveal: 'sfx/card_deal.mp3', // Placeholder
+            legendaryAnoucement: 'sfx/legendary annoucement.mp3', // Placeholder.  balatro/holo1.ogg
             uncommonAnoucement: 'sfx/uncommon.mp3',
-            allCardsReveal: 'sfx/cardflips.mp3',
-            allCardsReveal_withLegendary: ''
+            allCardsReveal: 'sfx/cardflips.mp3', // Placeholder
+            allCardsReveal_withLegendary: '' // Placeholder
         };
     </script>
 
@@ -132,44 +119,7 @@
     <div class="lightning" id="lightning"></div>
     <div class="legendary-announcement" id="legendaryAnnouncement">LEGENDARY!</div>
     
-    <!-- Discord Login Screen -->
-    <div class="discord-login" id="discordLogin">
-        <div class="login-container">
-            <h1 class="title">Hexapod TCG</h1>
-            <div class="login-card">
-                <h2>Daily Pack Opener</h2>
-                <p>Login with Discord to open your daily pack!</p>
-                <button class="discord-btn" id="discordLoginBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
-                    </svg>
-                    Login with Discord
-                </button>
-                <div class="user-info" id="userInfo" style="display: none;">
-                    <img id="userAvatar" src="" alt="Avatar" class="user-avatar">
-                    <span id="userName">Loading...</span>
-                    <button class="logout-btn" id="logoutBtn">Logout</button>
-                </div>
-                <div class="loading-message" id="loadingMessage" style="display: none;">
-                    <p>Authenticating...</p>
-                </div>
-                <div class="error-message" id="errorMessage" style="display: none;">
-                    <p id="errorText">An error occurred. Please try again.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Game -->
-    <div class="container" id="mainContainer" style="display: none;">
-        <div class="user-bar" id="userBar">
-            <div class="user-display">
-                <img id="gameUserAvatar" src="" alt="Avatar" class="small-avatar">
-                <span id="gameUserName">Player</span>
-            </div>
-            <button class="logout-btn small" id="gameLogoutBtn">Logout</button>
-        </div>
-        
+    <div class="container" id="mainContainer">
         <h1 class="title" id="title">Open Your Daily Pack!</h1>
         
         <div class="pack-container" id="packContainer">
@@ -197,9 +147,8 @@
     </div>
 
     <script>
-        // ===========================================
-        // AUDIO MANAGER
-        // ===========================================
+        // Audio Management System
+        // Simple Audio System
         class AudioManager {
             constructor() {
                 this.musicEnabled = true;
@@ -212,12 +161,14 @@
             }
 
             initAudio() {
+                // Background music
                 if (AUDIO_SETTINGS.backgroundMusic) {
                     this.backgroundMusic = new Audio(AUDIO_SETTINGS.backgroundMusic);
                     this.backgroundMusic.loop = true;
                     this.backgroundMusic.volume = this.volume * 0.3;
                 }
                 
+                // Start background music on first user interaction
                 document.addEventListener('click', () => {
                     if (this.musicEnabled) {
                         this.playBackgroundMusic();
@@ -226,19 +177,23 @@
             }
 
             setupVisibilityHandling() {
+                // Handle page visibility changes (tab switching, app backgrounding)
                 document.addEventListener('visibilitychange', () => {
                     if (document.hidden) {
+                        // Page is hidden (user switched tabs or app went to background)
                         if (this.backgroundMusic && !this.backgroundMusic.paused) {
                             this.musicWasPlaying = true;
                             this.backgroundMusic.pause();
                         }
                     } else {
+                        // Page is visible again
                         if (this.musicWasPlaying && this.musicEnabled && this.backgroundMusic) {
                             this.backgroundMusic.play().catch(e => console.log('Could not resume background music'));
                         }
                     }
                 });
 
+                // Additional handling for window focus/blur (desktop browsers)
                 window.addEventListener('blur', () => {
                     if (this.backgroundMusic && !this.backgroundMusic.paused) {
                         this.musicWasPlaying = true;
@@ -256,6 +211,7 @@
             playAudio(filename, volume = 1.0) {
                 if (!this.sfxEnabled || !filename) return;
                 
+                // Create new audio instance for stacking
                 const audio = new Audio(filename);
                 audio.volume = this.volume * volume;
                 audio.play().catch(e => console.log('Could not play audio:', filename));
@@ -287,610 +243,317 @@
             }
         }
 
-        // ===========================================
-        // DISCORD AUTH CLASS
-        // ===========================================
-        class DiscordAuth {
-            constructor() {
-                this.supabaseUrl = CONFIG.SUPABASE_URL;
-                this.currentUser = null;
-                this.init();
-            }
-
-            init() {
-                // Check for existing session
-                const savedUser = localStorage.getItem('discord_user');
-                if (savedUser) {
-                    this.currentUser = JSON.parse(savedUser);
-                    this.showMainGame();
-                } else {
-                    // Check if we're returning from Discord OAuth
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const code = urlParams.get('code');
-                    
-                    if (code) {
-                        this.handleOAuthCallback(code);
-                    } else {
-                        this.showLoginScreen();
-                    }
-                }
-
-                this.setupEventListeners();
-            }
-
-            setupEventListeners() {
-                const discordLoginBtn = document.getElementById('discordLoginBtn');
-                if (discordLoginBtn) {
-                    discordLoginBtn.addEventListener('click', () => this.initiateLogin());
-                }
-
-                const logoutBtn = document.getElementById('logoutBtn');
-                const gameLogoutBtn = document.getElementById('gameLogoutBtn');
-                
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', () => this.logout());
-                }
-                
-                if (gameLogoutBtn) {
-                    gameLogoutBtn.addEventListener('click', () => this.logout());
-                }
-            }
-
-            initiateLogin() {
-                const params = new URLSearchParams({
-                    client_id: CONFIG.DISCORD_CLIENT_ID,
-                    redirect_uri: CONFIG.DISCORD_REDIRECT_URI,
-                    response_type: 'code',
-                    scope: 'identify email',
-                });
-
-                window.location.href = `https://discord.com/oauth2/authorize?${params.toString()}`;
-            }
-
-            async handleOAuthCallback(code) {
-                try {
-                    this.showLoading('Authenticating with Discord...');
-
-                    // Clean up URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-
-                    // Send code to Supabase Edge Function
-                    const response = await fetch(`${this.supabaseUrl}/functions/v1/discord-oauth`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                        },
-                        body: JSON.stringify({ code }),
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Authentication failed');
-                    }
-
-                    const data = await response.json();
-                    this.currentUser = data.user;
-
-                    // Save user data to localStorage
-                    localStorage.setItem('discord_user', JSON.stringify(this.currentUser));
-
-                    this.showMainGame();
-                } catch (error) {
-                    console.error('OAuth callback error:', error);
-                    this.showError('Authentication failed. Please try again.');
-                    this.showLoginScreen();
-                }
-            }
-
-            async refreshUserData() {
-                if (!this.currentUser) return;
-
-                try {
-                    const response = await fetch(
-                        `${this.supabaseUrl}/functions/v1/discord-oauth?user_id=${this.currentUser.id}`,
-                        {
-                            headers: {
-                                'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                            },
-                        }
-                    );
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.currentUser = data.user;
-                        localStorage.setItem('discord_user', JSON.stringify(this.currentUser));
-                    }
-                } catch (error) {
-                    console.error('Failed to refresh user data:', error);
-                }
-            }
-
-            showLoginScreen() {
-                document.getElementById('discordLogin').style.display = 'flex';
-                document.getElementById('mainContainer').style.display = 'none';
-                this.hideLoading();
-                this.hideError();
-            }
-
-            showMainGame() {
-                document.getElementById('discordLogin').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-
-                if (this.currentUser) {
-                    // Update user display elements
-                    const gameUserAvatar = document.getElementById('gameUserAvatar');
-                    const gameUserName = document.getElementById('gameUserName');
-
-                    if (gameUserAvatar && this.currentUser.avatar_url) {
-                        gameUserAvatar.src = this.currentUser.avatar_url;
-                        gameUserAvatar.onerror = () => {
-                            gameUserAvatar.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
-                        };
-                    }
-
-                    if (gameUserName) {
-                        gameUserName.textContent = this.currentUser.username;
-                    }
-
-                    // Check if user has already opened today's pack
-                    this.updatePackStatus();
-                }
-            }
-
-            updatePackStatus() {
-                const titleElement = document.getElementById('title');
-                const packContainer = document.getElementById('packContainer');
-                const lockedMessage = document.getElementById('lockedMessage');
-
-                if (this.currentUser && this.currentUser.has_opened_today) {
-                    if (titleElement) titleElement.textContent = 'Pack Already Opened!';
-                    if (packContainer) {
-                        packContainer.style.opacity = '0.5';
-                        packContainer.style.pointerEvents = 'none';
-                    }
-                    if (lockedMessage) lockedMessage.style.display = 'block';
-                } else {
-                    if (titleElement) titleElement.textContent = 'Open Your Daily Pack!';
-                    if (packContainer) {
-                        packContainer.style.opacity = '1';
-                        packContainer.style.pointerEvents = 'auto';
-                    }
-                    if (lockedMessage) lockedMessage.style.display = 'none';
-                }
-            }
-
-            showLoading(message) {
-                const loadingDiv = document.getElementById('loadingMessage');
-                if (loadingDiv) {
-                    loadingDiv.style.display = 'block';
-                    loadingDiv.querySelector('p').textContent = message;
-                }
-            }
-
-            hideLoading() {
-                const loadingDiv = document.getElementById('loadingMessage');
-                if (loadingDiv) {
-                    loadingDiv.style.display = 'none';
-                }
-            }
-
-            showError(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.style.display = 'block';
-                    errorDiv.querySelector('#errorText').textContent = message;
-                }
-            }
-
-            hideError() {
-                const errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.style.display = 'none';
-                }
-            }
-
-            logout() {
-                this.currentUser = null;
-                localStorage.removeItem('discord_user');
-                this.showLoginScreen();
-                
-                // Reset the game state
-                if (window.game) {
-                    window.game.reset();
-                }
-            }
-
-            getCurrentUser() {
-                return this.currentUser;
-            }
-
-            isLoggedIn() {
-                return !!this.currentUser;
-            }
-        }
-
-        // ===========================================
-        // GAME CLASS
-        // ===========================================
-        class HexapodGame {
-            constructor() {
-                this.cards = [];
-                this.currentCardIndex = 0;
-                this.isPackOpened = false;
-                this.canClickCard = false;
-                this.init();
-            }
-
-            init() {
-                this.setupEventListeners();
-                this.createParticles();
-                
-                // Initialize pack image
-                const packImg = document.getElementById('packImage');
-                window.setProtectedImage(packImg, PACK_IMAGE);
-            }
-
-            setupEventListeners() {
-                const packContainer = document.getElementById('packContainer');
-                const currentCard = document.getElementById('currentCard');
-                
-                if (packContainer) {
-                    packContainer.addEventListener('click', () => this.openPack());
-                }
-                
-                if (currentCard) {
-                    currentCard.addEventListener('click', () => this.nextCard());
-                }
-            }
-
-            async openPack() {
-                if (this.isPackOpened) return;
-                if (!window.discordAuth || !window.discordAuth.isLoggedIn()) {
-                    alert('Please log in first!');
-                    return;
-                }
-
-                const user = window.discordAuth.getCurrentUser();
-                if (user.has_opened_today) {
-                    alert('You have already opened your daily pack! Come back tomorrow.');
-                    return;
-                }
-
-                try {
-                    this.showLoading(true);
-                    
-                    // Call the open-pack Edge Function
-                    const response = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/open-pack`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-                        },
-                        body: JSON.stringify({ user_id: user.id }),
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Failed to open pack');
-                    }
-
-                    const data = await response.json();
-                    
-                    // Convert backend cards to frontend format
-                    this.cards = data.cards.map(backendCard => {
-                        // Find matching card from CARD_COLLECTION
-                        const rarityCards = CARD_COLLECTION[backendCard.rarity] || CARD_COLLECTION.common;
-                        const matchingCard = rarityCards[Math.floor(Math.random() * rarityCards.length)];
-                        
-                        return {
-                            ...matchingCard,
-                            rarity: backendCard.rarity
-                        };
-                    });
-                    
-                    // Update user status
-                    user.has_opened_today = true;
-                    localStorage.setItem('discord_user', JSON.stringify(user));
-                    
-                    // Start pack opening animation
-                    this.animatePackOpening();
-                    
-                } catch (error) {
-                    console.error('Failed to open pack:', error);
-                    alert('Failed to open pack: ' + error.message);
-                } finally {
-                    this.showLoading(false);
-                }
-            }
-
-            showLoading(show) {
-                const pack = document.getElementById('pack');
-                if (pack) {
-                    pack.style.pointerEvents = show ? 'none' : 'auto';
-                    pack.style.opacity = show ? '0.7' : '1';
-                }
-            }
-
-            animatePackOpening() {
-                this.isPackOpened = true;
-                
-                const packContainer = document.getElementById('packContainer');
-                const pack = document.getElementById('pack');
-                const cardDisplay = document.getElementById('cardDisplay');
-                
-                if (!pack || !cardDisplay) return;
-
-                // Play pack opening sound
-                audioManager.play('packOpen');
-
-                // Reset title
-                const title = document.getElementById('title');
-                title.textContent = "";
-
-                // Add pack opening animation
-                pack.classList.add('opening');
-                
-                // Start energy rings animation
-                this.animateEnergyRings();
-                
-                // Show first card after animation
-                setTimeout(() => {
-                    if (packContainer) packContainer.style.display = 'none';
-                    cardDisplay.style.display = 'block';
-                    this.showCard(0);
-                }, 1300);
-            }
-
-            showCard(index) {
-                if (index >= this.cards.length) {
-                    this.showAllCards();
-                    return;
-                }
-
-                const card = this.cards[index];
-                const cardImage = document.getElementById('cardImage');
-                const currentCard = document.getElementById('currentCard');
-                
-                if (!cardImage || !currentCard) return;
-
-                // Force animation reset by removing and re-adding the element
-                const newCard = currentCard.cloneNode(true);
-                currentCard.parentNode.replaceChild(newCard, currentCard);
-                
-                // Get the new reference
-                const updatedCard = document.getElementById('currentCard');
-                const updatedImage = document.getElementById('cardImage');
-                
-                // Reset card with proper animation
-                updatedCard.className = 'card ' + card.rarity;
-                updatedCard.classList.add('card-slam');
-                updatedCard.classList.remove('flipped');
-                this.canClickCard = false;
-                
-                // Play card slam sound
-                audioManager.play('cardSlam');
-                
-                // Update title
-                this.updateTitle(card);
-                
-                // Set card image with protection
-                window.setProtectedImage(updatedImage, card.image);
-
-                // Special effects for rarity
-                if (card.rarity === 'uncommon') {
-                    audioManager.play('uncommonAnoucement');
-                }
-                
-                if (card.rarity === 'legendary') {
-                    audioManager.play('legendaryAnoucement');
-                    
-                    // Show legendary announcement
-                    const announcement = document.getElementById('legendaryAnnouncement');
-                    announcement.classList.add('show');
-                    setTimeout(() => announcement.classList.remove('show'), 2000);
-                    
-                    // Screen shake
-                    document.getElementById('mainContainer').classList.add('screen-shake');
-                    setTimeout(() => {
-                        document.getElementById('mainContainer').classList.remove('screen-shake');
-                    }, 500);
-                    
-                    // Lightning effect
-                    this.createLightning();
-                }
-                
-                // Auto flip after animation
-                setTimeout(() => {
-                    updatedCard.classList.add('flipped');
-                    this.canClickCard = true;
-                    
-                    // Play rarity-specific reveal sound
-                    audioManager.play(card.rarity + 'Reveal');
-                    
-                }, card.rarity === 'legendary' ? 1200 : 600);
-                
-                // Re-attach click handler to the new element
-                updatedCard.addEventListener('click', () => {
-                    if (!this.canClickCard) return;
-                    this.nextCard();
-                });
-                
-                this.currentCardIndex = index;
-            }
-
-            nextCard() {
-                if (this.currentCardIndex < this.cards.length - 1) {
-                    this.showCard(this.currentCardIndex + 1);
-                } else {
-                    this.showAllCards();
-                }
-            }
-
-            showAllCards() {
-                const cardDisplay = document.getElementById('cardDisplay');
-                const allCardsDisplay = document.getElementById('allCardsDisplay');
-                const title = document.getElementById('title');
-                
-                if (cardDisplay) cardDisplay.style.display = 'none';
-                if (allCardsDisplay) {
-                    allCardsDisplay.style.display = 'flex';
-                    allCardsDisplay.innerHTML = '';
-                    
-                    // Play all cards reveal sound
-                    const legendaryPulled = this.cards.some(card => card.rarity === 'legendary');
-                    if (legendaryPulled) {
-                        audioManager.play('allCardsReveal_withLegendary');
-                    } else {
-                        audioManager.play('allCardsReveal');
-                    }
-                    
-                    // Show all cards
-                    this.cards.forEach((card, i) => {
-                        const cardDiv = document.createElement('div');
-                        cardDiv.className = 'small-card ' + card.rarity;
-                        cardDiv.style.animationDelay = i * 0.1 + 's';
-                        
-                        const img = document.createElement('img');
-                        window.setProtectedImage(img, card.image);
-                        img.alt = card.name;
-                        
-                        const glow = document.createElement('div');
-                        glow.className = 'rarity-glow';
-                        glow.style.opacity = '1';
-                        
-                        cardDiv.appendChild(glow);
-                        cardDiv.appendChild(img);
-                        allCardsDisplay.appendChild(cardDiv);
-
-                        // Hover effect with burst
-                        cardDiv.addEventListener('mouseenter', function(e) {
-                            if (card.rarity === 'legendary') {
-                                const rect = e.target.getBoundingClientRect();
-                                // createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
-                            }
-                        });
-                    });
-                }
-                
-                if (title) {
-                    title.textContent = 'Your Collection!';
-                    title.className = 'title';
-                }
-                
-                // Update the auth status
-                if (window.discordAuth) {
-                    window.discordAuth.updatePackStatus();
-                }
-            }
-
-            updateTitle(card) {
-                const title = document.getElementById('title');
-                if (title) {
-                    title.textContent = card.name;
-                    title.className = 'title card-name ' + card.rarity;
-                }
-            }
-
-            animateEnergyRings() {
-                const rings = ['energyRing1', 'energyRing2', 'energyRing3'];
-                rings.forEach((ringId, index) => {
-                    const ring = document.getElementById(ringId);
-                    if (ring) {
-                        setTimeout(() => {
-                            ring.classList.add('active');
-                        }, index * 100 + 100);
-                    }
-                });
-            }
-
-            createLightning() {
-                const lightning = document.getElementById('lightning');
-                if (lightning) {
-                    lightning.innerHTML = '';
-                    lightning.classList.add('active');
-                    
-                    for (let i = 0; i < 5; i++) {
-                        const bolt = document.createElement('div');
-                        bolt.className = 'lightning-bolt';
-                        bolt.style.left = Math.random() * 100 + '%';
-                        bolt.style.animationDelay = i * 0.1 + 's';
-                        lightning.appendChild(bolt);
-                    }
-                    
-                    setTimeout(() => {
-                        lightning.classList.remove('active');
-                    }, 1000);
-                }
-            }
-
-            createParticles() {
-                const particlesContainer = document.getElementById('particles');
-                if (!particlesContainer) return;
-                
-                for (let i = 0; i < 20; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.left = Math.random() * 100 + '%';
-                    particle.style.animationDelay = Math.random() * 15 + 's';
-                    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-                    particlesContainer.appendChild(particle);
-                }
-            }
-
-            reset() {
-                this.cards = [];
-                this.currentCardIndex = 0;
-                this.isPackOpened = false;
-                this.canClickCard = false;
-                
-                // Reset UI
-                const packContainer = document.getElementById('packContainer');
-                const cardDisplay = document.getElementById('cardDisplay');
-                const allCardsDisplay = document.getElementById('allCardsDisplay');
-                const pack = document.getElementById('pack');
-                const title = document.getElementById('title');
-                
-                if (packContainer) packContainer.style.display = 'flex';
-                if (cardDisplay) cardDisplay.style.display = 'none';
-                if (allCardsDisplay) allCardsDisplay.style.display = 'none';
-                if (pack) pack.classList.remove('opening');
-                if (title) {
-                    title.textContent = 'Open Your Daily Pack!';
-                    title.className = 'title';
-                }
-                
-                // Clear energy rings
-                const rings = ['energyRing1', 'energyRing2', 'energyRing3'];
-                rings.forEach(ringId => {
-                    const ring = document.getElementById(ringId);
-                    if (ring) ring.classList.remove('active');
-                });
-            }
-        }
-
-        // ===========================================
-        // INITIALIZATION
-        // ===========================================
-        
         // Initialize audio manager
         const audioManager = new AudioManager();
+        // Initialize
+        document.getElementById('packImage').src = PACK_IMAGE;
+        // Apply protection to pack image
+        const packImg = document.getElementById('packImage');
+        window.setProtectedImage(packImg, PACK_IMAGE);
         
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Discord Auth
-            window.discordAuth = new DiscordAuth();
+        // Storage key for daily lock
+        const STORAGE_KEY = 'hexapod_last_opened';
+        let currentCardIndex = 0;
+        let pulledCards = [];
+        let canClickCard = false;
+        
+        // Create background particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) { // Reduced from 30 for performance
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Check if pack can be opened today
+        function canOpenPack() {
+            const lastOpened = localStorage.getItem(STORAGE_KEY);
+            if (!lastOpened) return true;
             
-            // Initialize Game
-            window.game = new HexapodGame();
-        });
+            const lastDate = new Date(lastOpened);
+            const today = new Date();
+            
+            // Set both dates to midnight for comparison
+            const lastMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            return todayMidnight > lastMidnight;
+        }
+        
+        // Get random card based on rarity
+        function getRandomCard() {
+            const rand = Math.random() * 100;
+            let rarity;
+            
+            if (rand < RARITY_CHANCES.legendary) {
+                rarity = 'legendary';
+            } else if (rand < RARITY_CHANCES.legendary + RARITY_CHANCES.uncommon) {
+                rarity = 'uncommon';
+            } else {
+                rarity = 'common';
+            }
+            
+            const cards = CARD_COLLECTION[rarity];
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            
+            return { ...card, rarity };
+        }
+        
+        // Generate 5 random cards
+        function generatePack() {
+            pulledCards = [];
+            for (let i = 0; i < 5; i++) {
+                pulledCards.push(getRandomCard());
+            }
+        }
+        
+        // Create burst effect
+        function createBurst(x, y, color, intensity = 20) {
+            // discontinue
+        }
+        
+        // Create lightning effect for legendary
+        function createLightning() {
+            const lightning = document.getElementById('lightning');
+            lightning.innerHTML = '';
+            lightning.classList.add('active');
+            
+            for (let i = 0; i < 5; i++) {
+                const bolt = document.createElement('div');
+                bolt.className = 'lightning-bolt';
+                bolt.style.left = Math.random() * 100 + '%';
+                bolt.style.animationDelay = i * 0.1 + 's';
+                lightning.appendChild(bolt);
+            }
+            
+            setTimeout(() => {
+                lightning.classList.remove('active');
+            }, 1000);
+        }
+        
+        // Update title with card name
+        function updateTitle(card) {
+            const title = document.getElementById('title');
+            title.textContent = card.name;
+            title.className = 'title card-name ' + card.rarity;
+        }
+        
+        // Show card with animation
+        function showCard(index) {
+            const card = pulledCards[index];
+            const cardElement = document.getElementById('currentCard');
+            const cardImage = document.getElementById('cardImage');
+            
+            // Force animation reset by removing and re-adding the element
+            const newCard = cardElement.cloneNode(true);
+            cardElement.parentNode.replaceChild(newCard, cardElement);
+            
+            // Get the new reference
+            const currentCard = document.getElementById('currentCard');
+            const currentImage = document.getElementById('cardImage');
+            
+            // Reset card with proper animation
+            currentCard.className = 'card ' + card.rarity;
+            currentCard.classList.add('card-slam');
+            currentCard.classList.remove('flipped');
+            canClickCard = false;
+            
+            // Play card slam sound
+            audioManager.play('cardSlam');
+            
+            // Update title
+            updateTitle(card);
+            
+            // Set card image with protection
+            window.setProtectedImage(currentImage, card.image);
 
-        // ===========================================
-        // DEBUG MODE
-        // ===========================================
+            if (card.rarity === 'uncommon') {
+                // Play uncommon announcement sound
+                audioManager.play('uncommonAnoucement');
+            }
+            // Special effects for legendary
+            if (card.rarity === 'legendary') {
+                // Play legendary sound immediately when card appears
+                audioManager.play('legendaryAnoucement');
+                // Show legendary announcement
+                const announcement = document.getElementById('legendaryAnnouncement');
+                announcement.classList.add('show');
+                setTimeout(() => announcement.classList.remove('show'), 2000);
+                
+                // Screen shake
+                document.getElementById('mainContainer').classList.add('screen-shake');
+                setTimeout(() => {
+                    document.getElementById('mainContainer').classList.remove('screen-shake');
+                }, 500);
+                
+                // Lightning effect
+                createLightning();
+                
+            }
+            
+            // Auto flip after animation
+            setTimeout(() => {
+                currentCard.classList.add('flipped');
+                canClickCard = true;
+                
+                // Play rarity-specific reveal sound
+                audioManager.play(card.rarity + 'Reveal');
+                
+                // Create burst effect based on rarity
+                const rect = currentCard.getBoundingClientRect();
+                const colors = {
+                    common: '#999',
+                    uncommon: '#0096ff',
+                    legendary: '#ffd700'
+                };
+                const intensity = card.rarity === 'legendary' ? 30 : 15;
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, colors[card.rarity], intensity);
+            }, card.rarity === 'legendary' ? 1200 : 600);
+            
+            // Re-attach click handler to the new element
+            currentCard.addEventListener('click', function() {
+                if (!canClickCard) return;
+                
+                currentCardIndex++;
+                
+                if (currentCardIndex < 5) {
+                    showCard(currentCardIndex);
+                } else {
+                    displayAllCards();
+                }
+            });
+        }
+        
+        // Display all cards
+        function displayAllCards() {
+            const container = document.getElementById('allCardsDisplay');
+            container.innerHTML = '';
+            
+            // Play all cards reveal sound
+            const legendaryPulled = pulledCards.some(card => card.rarity === 'legendary');
+            if (legendaryPulled) {
+                audioManager.play('allCardsReveal_withLegendary');
+            } else {
+                audioManager.play('allCardsReveal');
+            }
+            
+            // Reset title
+            document.getElementById('title').textContent = 'Your Collection!';
+            document.getElementById('title').className = 'title';
+            
+
+            pulledCards.forEach((card, i) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'small-card ' + card.rarity;
+                cardDiv.style.animationDelay = i * 0.1 + 's';
+                
+                const img = document.createElement('img');
+                window.setProtectedImage(img, card.image);
+                img.alt = card.name;
+                
+                const glow = document.createElement('div');
+                glow.className = 'rarity-glow';
+                glow.style.opacity = '1';
+                
+                cardDiv.appendChild(glow);
+                cardDiv.appendChild(img);
+                container.appendChild(cardDiv);
+
+                // Hover effect with burst
+                cardDiv.addEventListener('mouseenter', function(e) {
+                    if (card.rarity === 'legendary') {
+                        const rect = e.target.getBoundingClientRect();
+                        createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffd700', 10);
+                    }
+                });
+            });
+            
+            
+
+            document.getElementById('cardDisplay').style.display = 'none';
+            container.style.display = 'flex';
+        }
+        
+        // Card click handler
+        document.getElementById('currentCard').addEventListener('click', function() {
+            if (!canClickCard) return;
+            
+            currentCardIndex++;
+            
+            if (currentCardIndex < 5) {
+                showCard(currentCardIndex);
+            } else {
+                displayAllCards();
+            }
+        });
+        
+        // Pack click handler - UPDATED for mobile optimization
+        document.getElementById('packContainer').addEventListener('click', function() {
+            if (!canOpenPack()) {
+                document.getElementById('lockedMessage').style.display = 'block';
+                return;
+            }
+            const title = document.getElementById('title');
+            title.textContent = "";
+            
+            // Play pack opening sound
+            audioManager.play('packOpen');
+            
+            // Save opened date
+            localStorage.setItem(STORAGE_KEY, new Date().toISOString());
+            
+            // Generate pack
+            generatePack();
+            currentCardIndex = 0;
+            
+            // Start mobile-optimized opening sequence
+            const pack = document.getElementById('pack');
+            pack.classList.add('opening');
+            
+            // Simplified energy rings for mobile
+            setTimeout(() => {
+                document.getElementById('energyRing1').classList.add('active');
+            }, 100);
+            setTimeout(() => {
+                document.getElementById('energyRing2').classList.add('active');
+            }, 200);
+            setTimeout(() => {
+                document.getElementById('energyRing3').classList.add('active');
+            }, 300);
+            
+            // Create burst effects leading to white flash
+            const rect = pack.getBoundingClientRect();
+            setTimeout(() => {
+                createBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffffff', 20);
+            }, 400);
+            
+            // // Trigger white flash explosion earlier
+            // setTimeout(() => {
+            //     document.getElementById('flashOverlay').classList.add('active');
+            // }, 600);
+            
+            // Show first card after shortened animation sequence
+            setTimeout(() => {
+                document.getElementById('packContainer').style.display = 'none';
+                document.getElementById('cardDisplay').style.display = 'block';
+                document.getElementById('flashOverlay').classList.remove('active');
+                showCard(0);
+            }, 1300);
+        });
+        
+        // Initialize particles on load
+        createParticles();
+        
+        // DEBUG MODE - Add URL parameter support
         const urlParams = new URLSearchParams(window.location.search);
         const debugMode = urlParams.get('debug') === 'true';
         
+        // Debug controls
         if (debugMode) {
             console.log('🐛 DEBUG MODE ENABLED');
             
@@ -911,7 +574,7 @@
             debugPanel.innerHTML = `
                 <div style="margin-bottom: 10px; font-weight: bold;">🐛 DEBUG MODE</div>
                 <div style="margin-bottom: 5px; font-size: 10px; color: #999;">Right-click & F12 enabled</div>
-                <button id="debugLogin" style="
+                <button id="resetDaily" style="
                     background: #7cfc00;
                     color: #000;
                     border: none;
@@ -920,18 +583,8 @@
                     cursor: pointer;
                     margin: 2px;
                     font-size: 11px;
-                ">Fake Login</button>
-                <button id="debugReset" style="
-                    background: #ff6b6b;
-                    color: #fff;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    margin: 2px;
-                    font-size: 11px;
-                ">Reset State</button>
-                <button id="debugPack" style="
+                ">Reset Daily Lock</button>
+                <button id="forceLegendary" style="
                     background: #ffd700;
                     color: #000;
                     border: none;
@@ -940,64 +593,101 @@
                     cursor: pointer;
                     margin: 2px;
                     font-size: 11px;
-                ">Force Open Pack</button>
+                ">Force Legendary</button>
+                <button id="instantOpen" style="
+                    background: #ff6b6b;
+                    color: #fff;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    margin: 2px;
+                    font-size: 11px;
+                ">Skip Animations</button>
                 <div style="margin-top: 10px; font-size: 10px;">
-                    Press 'L' for fake login<br>
                     Press 'R' to reset<br>
-                    Press 'P' to force pack
+                    Press 'L' for legendary<br>
+                    Press 'Space' to open
                 </div>
             `;
             document.body.appendChild(debugPanel);
             
-            // Debug login button
-            document.getElementById('debugLogin').addEventListener('click', function() {
-                const fakeUser = {
-                    id: 'debug-user-123',
-                    discord_id: '123456789',
-                    username: 'Debug User',
-                    avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
-                    has_opened_today: false,
-                };
-                
-                localStorage.setItem('discord_user', JSON.stringify(fakeUser));
-                window.discordAuth.currentUser = fakeUser;
-                window.discordAuth.showMainGame();
-            });
-            
             // Reset button
-            document.getElementById('debugReset').addEventListener('click', function() {
-                localStorage.clear();
+            document.getElementById('resetDaily').addEventListener('click', function() {
+                localStorage.removeItem(STORAGE_KEY);
                 location.reload();
             });
             
-            // Force pack button
-            document.getElementById('debugPack').addEventListener('click', function() {
-                // Generate fake pack data
-                const fakeCards = [];
-                for (let i = 0; i < 5; i++) {
-                    const rarities = ['common', 'uncommon', 'legendary'];
-                    const rarity = rarities[Math.floor(Math.random() * rarities.length)];
-                    const cards = CARD_COLLECTION[rarity];
-                    const card = cards[Math.floor(Math.random() * cards.length)];
-                    fakeCards.push({ ...card, rarity });
-                }
-                
-                window.game.cards = fakeCards;
-                window.game.animatePackOpening();
+            // Force legendary button
+            let forceLegendaryMode = false;
+            document.getElementById('forceLegendary').addEventListener('click', function() {
+                forceLegendaryMode = !forceLegendaryMode;
+                this.style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                this.textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                console.log('Force Legendary:', forceLegendaryMode);
             });
+            
+            // Instant open button
+            let skipAnimations = false;
+            document.getElementById('instantOpen').addEventListener('click', function() {
+                skipAnimations = !skipAnimations;
+                this.style.background = skipAnimations ? '#00ff00' : '#ff6b6b';
+                this.textContent = skipAnimations ? 'Instant ON' : 'Skip Animations';
+                console.log('Skip Animations:', skipAnimations);
+            });
+            
+            // Override canOpenPack in debug mode
+            window.canOpenPack = function() {
+                return true; // Always allow opening in debug mode
+            };
+            
+            // Override getRandomCard for forced legendary
+            const originalGetRandomCard = getRandomCard;
+            window.getRandomCard = function() {
+                if (forceLegendaryMode) {
+                    const cards = CARD_COLLECTION.legendary;
+                    const card = cards[Math.floor(Math.random() * cards.length)];
+                    return { ...card, rarity: 'legendary' };
+                }
+                return originalGetRandomCard();
+            };
             
             // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'l' || e.key === 'L') {
-                    document.getElementById('debugLogin').click();
-                }
                 if (e.key === 'r' || e.key === 'R') {
-                    document.getElementById('debugReset').click();
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
                 }
-                if (e.key === 'p' || e.key === 'P') {
-                    document.getElementById('debugPack').click();
+                if (e.key === 'l' || e.key === 'L') {
+                    forceLegendaryMode = !forceLegendaryMode;
+                    document.getElementById('forceLegendary').style.background = forceLegendaryMode ? '#ff00ff' : '#ffd700';
+                    document.getElementById('forceLegendary').textContent = forceLegendaryMode ? 'Legendary ON' : 'Force Legendary';
+                }
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('packContainer').click();
                 }
             });
+            
+            // Speed up animations if instant mode
+            if (skipAnimations) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        animation-duration: 0.1s !important;
+                        transition-duration: 0.1s !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // Check if pack is locked on load (skip in debug mode)
+        if (!debugMode && !canOpenPack()) {
+            document.getElementById('packContainer').style.opacity = '0.5';
+            document.getElementById('packContainer').style.pointerEvents = 'none';
+            document.getElementById('lockedMessage').style.display = 'block';
+            document.getElementById('title').textContent = 'Daily Pack Already Opened!';
         }
     </script>
 </body>
